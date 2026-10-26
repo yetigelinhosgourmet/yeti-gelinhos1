@@ -226,13 +226,13 @@
     saveButton.disabled = true;
     setStatus(menuStatus, 'Adicionando sabor…');
     try {
-      // Let Postgres generate the product id. Existing catalogs may use UUIDs,
-      // so calculating the next id in the browser can turn into NaN/null.
+      // Products use UUID identifiers. Generate one in the secure GitHub Pages context
+      // instead of deriving a numeric id from existing rows.
+      const id = crypto.randomUUID();
       const sortOrder = products.reduce((max, product) => Math.max(max, Number(product.sort_order) || 0), 0) + 1;
-      const imageKey = 'new-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
-      const image = file ? await uploadImage(file, imageKey) : null;
+      const image = file ? await uploadImage(file, id) : null;
       const { error } = await client.from('products').insert({
-        name, price, stock, image, active: true, sort_order: sortOrder
+        id, name, price, stock, image, active: true, sort_order: sortOrder
       });
       if (error) throw error;
       document.querySelector('#new-name').value = '';
