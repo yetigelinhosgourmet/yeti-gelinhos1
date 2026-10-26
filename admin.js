@@ -116,8 +116,36 @@
       active.type = 'checkbox'; active.checked = product.active !== false; active.dataset.active = '';
       const activeLabel = document.createElement('label');
       activeLabel.className = 'active-label'; activeLabel.append(active, document.createTextNode('Mostrar no cardápio'));
-      row.append(photoWrap, makeLabel('Sabor', name), makeLabel('Preço (R$)', price), activeLabel);
+      const productActions = document.createElement('div');
+      productActions.className = 'product-actions';
+      const deleteButton = document.createElement('button');
+      deleteButton.className = 'button delete-product';
+      deleteButton.type = 'button';
+      deleteButton.textContent = 'Excluir item';
+      deleteButton.addEventListener('click', () => deleteProduct(product));
+      productActions.append(activeLabel, deleteButton);
+      row.append(photoWrap, makeLabel('Sabor', name), makeLabel('Preço (R$)', price), productActions);
       rowsEl.append(row);
+    }
+  }
+
+  async function deleteProduct(product) {
+    const confirmed = window.confirm('Excluir o sabor "' + product.name + '"? Esta ação não pode ser desfeita.');
+    if (!confirmed) return;
+    setStatus(menuStatus, 'Excluindo sabor…');
+    try {
+      const { error } = await client.from('products').delete().eq('id', product.id);
+      if (error) {
+        if (error.code === '23503' || /foreign key|constraint/i.test(error.message || '')) {
+          throw new Error('Este sabor está associado a pedidos. Desative-o para preservar o histórico.');
+        }
+        throw error;
+      }
+      products = products.filter(item => item.id !== product.id);
+      renderProducts();
+      setStatus(menuStatus, 'Sabor excluído do cardápio.', 'success');
+    } catch (error) {
+      setStatus(menuStatus, 'Não foi possível excluir. ' + imageError(error), 'error');
     }
   }
 
