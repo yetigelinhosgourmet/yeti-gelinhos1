@@ -15,6 +15,10 @@
   let currentUser = null;
   const IMAGE_BUCKET = 'product-images';
   const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+  const EMPTY_IMAGE = 'data:image/svg+xml,%3Csvg xmlns=%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width=%22160%22 height=%22160%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23f2f8ff%22%2F%3E%3Ctext x=%2250%25%22 y=%2252%25%22 text-anchor=%22middle%22 fill=%22%23637894%22 font-family=%22sans-serif%22 font-size=%2216%22%3ESem%20foto%3C%2Ftext%3E%3C%2Fsvg%3E';
+  function normalizeProductName(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR');
+  }
 
   function setStatus(el, text, kind = '') {
     el.textContent = text;
@@ -77,23 +81,37 @@
       const preview = document.createElement('img');
       preview.className = 'photo-preview';
       preview.alt = 'Foto do sabor ' + product.name;
-      preview.src = imageSrc(product.image) || 'data:image/svg+xml,%3Csvg xmlns=%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width=%22160%22 height=%22160%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23f2f8ff%22%2F%3E%3Ctext x=%2250%25%22 y=%2252%25%22 text-anchor=%22middle%22 fill=%22%23637894%22 font-family=%22sans-serif%22 font-size=%2216%22%3ESem%20foto%3C%2Ftext%3E%3C%2Fsvg%3E';
+      preview.src = imageSrc(product.image) || EMPTY_IMAGE;
       const file = document.createElement('input');
       file.type = 'file';
       file.accept = 'image/jpeg,image/png,image/webp';
       file.dataset.photo = '';
       file.setAttribute('aria-label', 'Escolher nova foto para ' + product.name);
-      photoWrap.append(preview, file);
+      const removePhoto = document.createElement('input');
+      removePhoto.type = 'checkbox';
+      removePhoto.dataset.removePhoto = '';
+      removePhoto.disabled = !product.image;
+      removePhoto.setAttribute('aria-label', 'Remover foto de ' + product.name);
+      const removePhotoLabel = document.createElement('label');
+      removePhotoLabel.className = 'remove-photo-label';
+      removePhotoLabel.append(removePhoto, document.createTextNode('Remover foto'));
+      photoWrap.append(preview, file, removePhotoLabel);
+      removePhoto.addEventListener('change', () => {
+        preview.src = removePhoto.checked ? EMPTY_IMAGE : (imageSrc(product.image) || EMPTY_IMAGE);
+      });
       file.addEventListener('change', () => {
         const issue = validateImage(file.files[0]);
         if (issue) { file.value = ''; setStatus(menuStatus, issue, 'error'); return; }
-        if (file.files[0]) preview.src = URL.createObjectURL(file.files[0]);
+        if (file.files[0]) {
+          removePhoto.checked = false;
+          preview.src = URL.createObjectURL(file.files[0]);
+        }
       });
 
       const name = document.createElement('input');
       name.type = 'text'; name.maxLength = 80; name.required = true; name.value = product.name; name.dataset.name = '';
       const price = document.createElement('input');
-      price.type = 'number'; price.min = '0.01'; price.step = '0.01'; price.value = Number(product.price).toFixed(2); price.dataset.price = '';
+      price.type = 'number'; price.min = '0'; price.step = '0.01'; price.value = Number(product.price).toFixed(2); price.dataset.price = '';
       const active = document.createElement('input');
       active.type = 'checkbox'; active.checked = product.active !== false; active.dataset.active = '';
       const activeLabel = document.createElement('label');
@@ -232,13 +250,25 @@
       const price = Number(row.querySelector('[data-price]').value);
       const active = row.querySelector('[data-active]').checked;
       const file = row.querySelector('[data-photo]').files[0] || null;
-      return { id: product.id, name, price, active, file };
+      const removePhoto = row.querySelector('[data-remove-photo]').checked;
+      return { id: product.id, name, price, active, file, removePhoto };
     });
+    if (updates.some(item => !item.name)) {
+      setStatus(menuStatus, 'Informe um nome para cada sabor.', 'error');
+      return;
+    }
     const allNames = [...updates.map(item => item.name), ...products.filter(p => !updates.some(u => u.id === p.id)).map(p => p.name)];
-    const uniqueNames = new Set(allNames.map(name => name.toLocaleLowerCase('pt-BR')));
-    if (updates.some(item => !item.name || !Number.isFinite(item.price) || item.price <= 0 ||
-      validateImage(item.file)) || uniqueNames.size !== allNames.length) {
-      setStatus(menuStatus, 'Confira nomes diferentes, preços e fotos (JPG, PNG ou WebP até 5 MB).', 'error');
+    const uniqueNames = new Set(allNames.map(normalizeProductName));
+    if (uniqueNames.size !== allNames.length) {
+      setStatus(menuStatus, 'Cada sabor precisa ter um nome diferente.', 'error');
+      return;
+    }
+    if (updates.some(item => !Number.isFinite(item.price) || item.price < 0 || (item.active && item.price === 0))) {
+      setStatus(menuStatus, 'Sabores ativos precisam ter preço maior que R$ 0. Sabores inativos podem ficar com preço R$ 0.', 'error');
+      return;
+    }
+    if (updates.some(item => validateImage(item.file))) {
+      setStatus(menuStatus, 'Use fotos JPG, PNG ou WebP com até 5 MB.', 'error');
       return;
     }
     saveButton.disabled = true;
@@ -247,7 +277,7 @@
     try {
       for (const item of updates) {
         const oldProduct = products.find(p => p.id === item.id);
-        const photoUrl = item.file ? await uploadImage(item.file, item.id) : oldProduct.image;
+        const photoUrl = item.file ? await uploadImage(item.file, item.id) : item.removePhoto ? null : oldProduct.image;
         const { error } = await client.from('products').update({
           name: item.name, price: item.price, active: item.active, image: photoUrl
         }).eq('id', item.id);
