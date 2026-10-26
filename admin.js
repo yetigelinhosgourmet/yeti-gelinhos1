@@ -182,7 +182,7 @@
 
   async function loadOrders() {
     const { data, error } = await client.from('orders')
-      .select('id,status,fulfillment_method,total,created_at,customer_name,customer_phone,delivery_address').order('created_at', {ascending:false}).limit(40);
+      .select('id,status,fulfillment_method,total,created_at,customer_name,customer_phone,delivery_address').eq('source','site').order('created_at', {ascending:false}).limit(40);
     if (error) throw error;
     const orderIds = (data || []).map(order => order.id);
     let itemRows = [];
