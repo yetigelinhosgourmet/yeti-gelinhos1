@@ -30,6 +30,7 @@ alter table public.orders add column if not exists total numeric(10,2);
 alter table public.orders add column if not exists created_at timestamptz;
 alter table public.orders add column if not exists confirmed_at timestamptz;
 alter table public.orders add column if not exists cancelled_at timestamptz;
+alter table public.orders add column if not exists source text;
 alter table public.orders add column if not exists customer_name text;
 alter table public.orders add column if not exists customer_phone text;
 alter table public.orders add column if not exists delivery_address text;
@@ -54,8 +55,8 @@ alter table public.orders alter column total set default 0;
 alter table public.orders alter column total set not null;
 alter table public.orders alter column created_at set default now();
 alter table public.orders alter column created_at set not null;
-update public.orders set status = case when status = 'confirmed' then 'confirmed' when status in ('cancelled', 'cancelado') then 'cancelled' else 'pending' end where status is null or status not in ('pending', 'confirmed', 'cancelled');
-alter table public.orders add constraint orders_status_check check (status in ('pending', 'confirmed', 'cancelled'));
+update public.orders set status = case when status in ('pending', 'confirmed', 'cancelled', 'aguardando_confirmacao', 'aguardando_separacao', 'separado', 'cancelado') then status else 'pending' end where status is null or status not in ('pending', 'confirmed', 'cancelled', 'aguardando_confirmacao', 'aguardando_separacao', 'separado', 'cancelado');
+alter table public.orders add constraint orders_status_check check (status in ('pending', 'confirmed', 'cancelled', 'aguardando_confirmacao', 'aguardando_separacao', 'separado', 'cancelado'));
 
 alter table public.order_items add column if not exists id uuid default gen_random_uuid();
 alter table public.order_items add column if not exists order_id uuid;
@@ -114,8 +115,8 @@ begin
   select count(*), count(distinct value->>'product_id') into v_count, v_unique_count from jsonb_array_elements(p_items);
   if v_count <> v_unique_count then raise exception 'O pedido contém sabores repetidos de forma inválida.'; end if;
 
-  insert into public.orders (id, status, fulfillment_method, delivery_fee, customer_name, customer_phone, delivery_address, notes)
-  values (v_order_id, 'pending', p_fulfillment, p_delivery_fee, trim(p_customer_name), nullif(trim(coalesce(p_customer_phone, '')), ''), nullif(trim(coalesce(p_delivery_address, '')), ''), nullif(trim(coalesce(p_notes, '')), ''));
+  insert into public.orders (id, status, source, fulfillment_method, delivery_fee, customer_name, customer_phone, delivery_address, notes)
+  values (v_order_id, 'pending', 'site', p_fulfillment, p_delivery_fee, trim(p_customer_name), nullif(trim(coalesce(p_customer_phone, '')), ''), nullif(trim(coalesce(p_delivery_address, '')), ''), nullif(trim(coalesce(p_notes, '')), ''));
 
   for v_item in select value from jsonb_array_elements(p_items) loop
     if coalesce(v_item->>'product_id', '') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then raise exception 'Identificador de sabor inválido.'; end if;
