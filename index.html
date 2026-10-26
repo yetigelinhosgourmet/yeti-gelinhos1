@@ -39,16 +39,16 @@
   <script>
     const WHATSAPP = '5511947991253';
     const products = [
-      {name:'Ninho com Nutella',price:7,emoji:'🍫',image:'ninho-com-nutella.jpg'}, {name:'Suflair',price:7,emoji:'🍫',image:'suflair.jpg'},
-      {name:'Ninho com Geleia de Morango',price:7,emoji:'🍓',image:'ninho-com-geleia-de-morango.jpg'}, {name:'Paçoca',price:5,emoji:'🥜',image:'pacoca.jpg'},
-      {name:'Maracujá',price:6,emoji:'🍋',image:'maracuja.jpg'}, {name:'Pudim',price:7,emoji:'🍮',image:'pudim.jpg'},
-      {name:'Churros',price:7,emoji:'✨',image:'churros.jpg'}, {name:'Panetone',price:7,emoji:'🎄',image:'panetone.jpg'},
-      {name:'Coco',price:6,emoji:'🥥',image:'coco.jpg'}, {name:'Oreo',price:6,emoji:'🍪',image:'oreo.jpg'},
-      {name:'Abacaxi com Coco',price:7,emoji:'🍍',image:'abacaxi-com-coco.jpg'}, {name:'Galak',price:7,emoji:'🤍',image:'galak.jpg'},
-      {name:'Limão',price:5,emoji:'🍋',image:'limao.jpg'},
-      {name:'Ninho com Geleia de Blueberry',price:8,emoji:'🫐',image:'ninho-geleia-blueberry.jpg'},
-      {name:'Milho',price:6,emoji:'🌽',image:'milho.jpg'},
-      {name:'Capuccino com Nutella',price:7,emoji:'☕',image:'capuccino-com-nutella.jpg'}
+      {id:1,name:'Ninho com Nutella',price:7,emoji:'🍫',image:'ninho-com-nutella.jpg'}, {id:2,name:'Suflair',price:7,emoji:'🍫',image:'suflair.jpg'},
+      {id:3,name:'Ninho com Geleia de Morango',price:7,emoji:'🍓',image:'ninho-com-geleia-de-morango.jpg'}, {id:4,name:'Paçoca',price:5,emoji:'🥜',image:'pacoca.jpg'},
+      {id:5,name:'Maracujá',price:6,emoji:'🍋',image:'maracuja.jpg'}, {id:6,name:'Pudim',price:7,emoji:'🍮',image:'pudim.jpg'},
+      {id:7,name:'Churros',price:7,emoji:'✨',image:'churros.jpg'}, {id:8,name:'Panetone',price:7,emoji:'🎄',image:'panetone.jpg'},
+      {id:9,name:'Coco',price:6,emoji:'🥥',image:'coco.jpg'}, {id:10,name:'Oreo',price:6,emoji:'🍪',image:'oreo.jpg'},
+      {id:11,name:'Abacaxi com Coco',price:7,emoji:'🍍',image:'abacaxi-com-coco.jpg'}, {id:12,name:'Galak',price:7,emoji:'🤍',image:'galak.jpg'},
+      {id:13,name:'Limão',price:5,emoji:'🍋',image:'limao.jpg'},
+      {id:14,name:'Ninho com Geleia de Blueberry',price:8,emoji:'🫐',image:'ninho-geleia-blueberry.jpg'},
+      {id:15,name:'Milho',price:6,emoji:'🌽',image:'milho.jpg'},
+      {id:16,name:'Capuccino com Nutella',price:7,emoji:'☕',image:'capuccino-com-nutella.jpg'}
     ];
     const cart = new Map();
     const money = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -88,10 +88,10 @@
       ?window.supabase.createClient(menuConfig.supabaseUrl,menuConfig.supabasePublishableKey):null;
     async function loadSharedMenu(){
       if(!menuClient)return;
-      const {data,error}=await menuClient.from('products').select('name,price,stock').order('sort_order');
+      const {data,error}=await menuClient.from('products').select('id,name,price,stock').order('sort_order');
       if(error){toast('Não foi possível atualizar o cardápio agora');return}
-      const sharedByName=new Map((data||[]).map(item=>[item.name,item]));
-      products.forEach(product=>{const shared=sharedByName.get(product.name);if(shared){product.price=Number(shared.price);product.stock=shared.stock}});
+      const sharedById=new Map((data||[]).map(item=>[Number(item.id),item]));
+      products.forEach(product=>{const shared=sharedById.get(product.id);if(shared){product.name=shared.name;product.price=Number(shared.price);product.stock=shared.stock}});
       renderProducts();render();
     }
     render();
@@ -99,6 +99,8 @@
   </script>
 </body>
 </html>
+
+
 
 
 

@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
   const config = window.YETI_CONFIG || {};
   const loginPanel = document.querySelector('#login-panel');
   const menuPanel = document.querySelector('#menu-panel');
@@ -58,8 +58,15 @@
     for (const product of products) {
       const row = document.createElement('div');
       row.className = 'row';
-      const name = document.createElement('strong');
-      name.textContent = product.name;
+      const nameLabel = document.createElement('label');
+      nameLabel.textContent = 'Sabor';
+      const name = document.createElement('input');
+      name.type = 'text';
+      name.maxLength = 80;
+      name.required = true;
+      name.value = product.name;
+      name.dataset.name = String(product.id);
+      nameLabel.append(name);
       const priceLabel = document.createElement('label');
       priceLabel.textContent = 'Preço (R$)';
       const price = document.createElement('input');
@@ -119,21 +126,23 @@
 
   saveButton.addEventListener('click', async () => {
     const updates = products.map(product => {
+      const name = rowsEl.querySelector('[data-name="' + product.id + '"]').value.trim();
       const price = Number(rowsEl.querySelector('[data-price="' + product.id + '"]').value);
       const stockText = rowsEl.querySelector('[data-stock="' + product.id + '"]').value.trim();
       const stock = stockText === '' ? null : Number(stockText);
-      return { id: product.id, price, stock };
+      return { id: product.id, name, price, stock };
     });
-    if (updates.some(item => !Number.isFinite(item.price) || item.price <= 0 ||
-      (item.stock !== null && (!Number.isInteger(item.stock) || item.stock < 0)))) {
-      setStatus(menuStatus, 'Confira os preços e as quantidades informados.', 'error');
+    const uniqueNames = new Set(updates.map(item => item.name.toLocaleLowerCase('pt-BR')));
+    if (updates.some(item => !item.name || !Number.isFinite(item.price) || item.price <= 0 ||
+      (item.stock !== null && (!Number.isInteger(item.stock) || item.stock < 0))) || uniqueNames.size !== updates.length) {
+      setStatus(menuStatus, 'Confira os nomes, preços e quantidades. Os sabores precisam ter nomes diferentes.', 'error');
       return;
     }
     saveButton.disabled = true;
     setStatus(menuStatus, 'Salvando…');
     for (const item of updates) {
       const { error } = await client.from('products')
-        .update({ price: item.price, stock: item.stock })
+        .update({ name: item.name, price: item.price, stock: item.stock })
         .eq('id', item.id);
       if (error) {
         saveButton.disabled = false;
