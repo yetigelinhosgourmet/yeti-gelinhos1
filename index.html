@@ -151,7 +151,12 @@
       if(error){toast('Não foi possível atualizar o cardápio agora');return}
       const normalizeName=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLocaleLowerCase('pt-BR');
       const fallbackByName=new Map(products.map(product=>[normalizeName(product.name),product]));
-      const shared=(data||[]).filter(item=>item.active!==false).map(item=>{const fallback=fallbackByName.get(normalizeName(item.name))||{};const image=String(item.image||'').trim();return {...fallback,...item,id:String(item.id),price:Number(item.price),stock:0,image:image||fallback.image||''}});
+      const fallbackNameAliases=new Map([
+        ['capuccino','capuccino com nutella'],
+        ['ninho com blueberry','ninho com geleia de blueberry'],
+        ['nutella','ninho com nutella']
+      ]);
+      const shared=(data||[]).filter(item=>item.active!==false).map(item=>{const normalizedName=normalizeName(item.name);const fallback=fallbackByName.get(normalizedName)||fallbackByName.get(fallbackNameAliases.get(normalizedName))||{};const image=String(item.image||'').trim();return {...fallback,...item,id:String(item.id),price:Number(item.price),stock:0,image:image||fallback.image||''}});
       products.splice(0,products.length,...shared);
       renderProducts();render();
     }    render();
