@@ -11,6 +11,7 @@
   const rowsEl = document.querySelector('#product-rows');
   let client = null;
   let products = [];
+  let orders = [];
   let currentUser = null;
   const IMAGE_BUCKET = 'product-images';
   const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -137,6 +138,84 @@
     renderProducts();
   }
 
+  function renderOrders() {
+    const list = document.querySelector('#order-list');
+    list.replaceChildren();
+    if (!orders.length) {
+      const empty = document.createElement('p');
+      empty.className = 'muted';
+      empty.textContent = 'Nenhum pedido recebido ainda.';
+      list.append(empty);
+      return;
+    }
+    for (const order of orders) {
+      const card = document.createElement('article');
+      card.className = 'order-card';
+      const title = document.createElement('h3');
+      title.textContent = 'Pedido #' + order.id.slice(0, 8).toUpperCase() + ' · ' + ({pending:'Aguardando confirmação',confirmed:'Confirmado',cancelled:'Cancelado'}[order.status] || order.status);
+      card.append(title);
+      const details = document.createElement('p');
+      details.textContent = new Date(order.created_at).toLocaleString('pt-BR') + ' · ' + order.fulfillment_method + ' · Total ' + Number(order.total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+      card.append(details);
+      const itemList = document.createElement('ul');
+      itemList.className = 'order-items';
+      for (const item of order.items || []) {
+        const li = document.createElement('li');
+        li.textContent = item.quantity + 'x ' + item.product_name + ' · ' + Number(item.unit_price * item.quantity).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+        itemList.append(li);
+      }
+      card.append(itemList);
+      if (order.status !== 'cancelled') {
+        const actions = document.createElement('div');
+        actions.className = 'order-actions';
+        if (order.status === 'pending') {
+          const confirm = document.createElement('button');
+          confirm.className = 'button primary';
+          confirm.type = 'button';
+          confirm.textContent = 'Confirmar e baixar estoque';
+          confirm.addEventListener('click', () => processOrder(order.id, 'confirm'));
+          actions.append(confirm);
+        }
+        const cancel = document.createElement('button');
+        cancel.className = 'button secondary';
+        cancel.type = 'button';
+        cancel.textContent = order.status === 'confirmed' ? 'Cancelar e devolver estoque' : 'Cancelar pedido';
+        cancel.addEventListener('click', () => processOrder(order.id, 'cancel'));
+        actions.append(cancel);
+        card.append(actions);
+      }
+      list.append(card);
+    }
+  }
+
+  async function loadOrders() {
+    const { data, error } = await client.from('orders')
+      .select('id,status,fulfillment_method,total,created_at').order('created_at', {ascending:false}).limit(40);
+    if (error) throw error;
+    const orderIds = (data || []).map(order => order.id);
+    let itemRows = [];
+    if (orderIds.length) {
+      const result = await client.from('order_items').select('order_id,product_name,unit_price,quantity').in('order_id', orderIds);
+      if (result.error) throw result.error;
+      itemRows = result.data || [];
+    }
+    orders = (data || []).map(order => ({...order, items:itemRows.filter(item => item.order_id === order.id)}));
+    renderOrders();
+  }
+
+  async function processOrder(orderId, action) {
+    const rpc = action === 'confirm' ? 'confirm_order' : 'cancel_order';
+    setStatus(menuStatus, action === 'confirm' ? 'Confirmando pedido e atualizando o estoque…' : 'Cancelando pedido…');
+    try {
+      const { error } = await client.rpc(rpc, {p_order_id:orderId});
+      if (error) throw error;
+      await Promise.all([loadProducts(), loadOrders()]);
+      setStatus(menuStatus, action === 'confirm' ? 'Pedido confirmado e estoque baixado.' : 'Pedido cancelado; o estoque foi atualizado quando necessário.', 'success');
+    } catch (error) {
+      setStatus(menuStatus, 'Não foi possível processar o pedido. ' + imageError(error), 'error');
+    }
+  }
+
   async function openAdmin(user) {
     if (!(await verifyAdmin(user))) return;
     currentUser = user;
@@ -144,6 +223,7 @@
     setStatus(menuStatus, 'Carregando cardápio…');
     try {
       await loadProducts();
+      await loadOrders();
       setStatus(menuStatus, products.length + ' sabores carregados.');
     } catch (error) {
       setStatus(menuStatus, 'Não foi possível carregar os sabores. ' + imageError(error), 'error');

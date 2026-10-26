@@ -78,11 +78,64 @@
     deliveryCepInput.addEventListener('blur',calculateDelivery);
     function renderProducts(){productsEl.replaceChildren();products.forEach((p)=>{const card=document.createElement('article');card.className='product';const top=document.createElement('div');top.className='product-top';const title=document.createElement('h3');title.textContent=p.name;top.append(title);if(p.image){const photo=document.createElement('img');photo.className='product-photo';photo.src=/^https?:\/\//i.test(p.image)||p.image.startsWith('/')?p.image:'./'+p.image;photo.alt='Gelinhos sabor '+p.name;photo.loading='lazy';top.append(photo)}else{const emoji=document.createElement('span');emoji.className='emoji';emoji.setAttribute('aria-hidden','true');emoji.textContent=p.emoji||'🍧';top.append(emoji)}const price=document.createElement('div');price.className='price';price.textContent=money(p.price);card.append(top,price);const soldOut=p.stock===0;if(p.stock!=null){const availability=document.createElement('div');availability.className='stock-status '+(soldOut?'sold':'');availability.textContent=soldOut?'Esgotado':'Disponível';card.append(availability)}const button=document.createElement('button');button.className='add';button.type='button';button.dataset.index=String(p.id);button.disabled=soldOut;button.textContent=soldOut?'Indisponível':'Adicionar +';card.append(button);productsEl.append(card)})}
     renderProducts();
-    function render(){let count=0,subtotal=0;itemsEl.replaceChildren();cart.forEach((qty,id)=>{const p=products.find(item=>item.id===id);if(!p)return;count+=qty;subtotal+=qty*p.price;const li=document.createElement('li');li.innerHTML=`<div><div class="item-name"></div><div class="item-controls"><button class="qty-btn" data-action="minus" data-index="${id}" aria-label="Remover uma unidade">−</button><span>${qty}</span><button class="qty-btn" data-action="plus" data-index="${id}" aria-label="Adicionar uma unidade">+</button><button class="remove" data-action="remove" data-index="${id}">tirar</button></div></div><strong>${money(qty*p.price)}</strong>`;li.querySelector('.item-name').textContent=p.name;li.querySelector('[data-action="minus"]').setAttribute('aria-label','Remover uma unidade de '+p.name);li.querySelector('[data-action="plus"]').setAttribute('aria-label','Adicionar uma unidade de '+p.name);itemsEl.append(li)});const isPickup=fulfillmentSelect.value==='Retirada',fee=isPickup?0:(deliveryQuote?.fee||0);document.querySelector('#cart-count').textContent=count;document.querySelector('#subtotal').textContent=money(subtotal);document.querySelector('#delivery-fee').textContent=isPickup?'Grátis':deliveryQuote?money(fee):deliveryQuoteBusy?'Calculando...':'Informe o CEP';document.querySelector('#total').textContent=money(subtotal+fee);emptyEl.hidden=count>0;itemsEl.hidden=count===0;document.querySelector('#send').disabled=count===0||!fulfillmentSelect.value||(!isPickup&&(!deliveryQuote||deliveryQuoteBusy))}
+    function render(){let count=0,subtotal=0;itemsEl.replaceChildren();cart.forEach((qty,id)=>{const p=products.find(item=>String(item.id)===id);if(!p)return;count+=qty;subtotal+=qty*p.price;const li=document.createElement('li');li.innerHTML=`<div><div class="item-name"></div><div class="item-controls"><button class="qty-btn" data-action="minus" data-index="${id}" aria-label="Remover uma unidade">−</button><span>${qty}</span><button class="qty-btn" data-action="plus" data-index="${id}" aria-label="Adicionar uma unidade">+</button><button class="remove" data-action="remove" data-index="${id}">tirar</button></div></div><strong>${money(qty*p.price)}</strong>`;li.querySelector('.item-name').textContent=p.name;li.querySelector('[data-action="minus"]').setAttribute('aria-label','Remover uma unidade de '+p.name);li.querySelector('[data-action="plus"]').setAttribute('aria-label','Adicionar uma unidade de '+p.name);itemsEl.append(li)});const isPickup=fulfillmentSelect.value==='Retirada',fee=isPickup?0:(deliveryQuote?.fee||0);document.querySelector('#cart-count').textContent=count;document.querySelector('#subtotal').textContent=money(subtotal);document.querySelector('#delivery-fee').textContent=isPickup?'Grátis':deliveryQuote?money(fee):deliveryQuoteBusy?'Calculando...':'Informe o CEP';document.querySelector('#total').textContent=money(subtotal+fee);emptyEl.hidden=count>0;itemsEl.hidden=count===0;document.querySelector('#send').disabled=count===0||!fulfillmentSelect.value||(!isPickup&&(!deliveryQuote||deliveryQuoteBusy))}
     let toastTimer;function toast(msg){const el=document.querySelector('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),1600)}
-    productsEl.addEventListener('click',e=>{const b=e.target.closest('[data-index]');if(!b||b.disabled)return;const id=Number(b.dataset.index),p=products.find(item=>item.id===id),current=cart.get(id)||0;if(!p)return;if(p.stock!=null&&current>=p.stock){toast('Não há mais unidades disponíveis');return}cart.set(id,current+1);render();toast(p.name+' adicionado à sacola')});
-    itemsEl.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b)return;const id=Number(b.dataset.index),p=products.find(item=>item.id===id),action=b.dataset.action;if(!p)return;if(action==='plus'){if(p.stock!=null&&(cart.get(id)||0)>=p.stock){toast('Limite de estoque atingido');return}cart.set(id,(cart.get(id)||0)+1)}if(action==='minus'){const q=(cart.get(id)||0)-1;if(q<=0)cart.delete(id);else cart.set(id,q)}if(action==='remove')cart.delete(id);render()});
-    document.querySelector('#order-form').addEventListener('submit',e=>{e.preventDefault();if(!cart.size)return;const name=document.querySelector('#customer').value.trim(),method=fulfillmentSelect.value,notes=document.querySelector('#notes').value.trim(),isPickup=method==='Retirada';if(!isPickup&&!deliveryQuote)return;const fee=isPickup?0:deliveryQuote.fee,orderItems=Array.from(cart,([id,q])=>({product:products.find(p=>p.id===id),quantity:q})).filter(item=>item.product),subtotal=orderItems.reduce((sum,item)=>sum+item.quantity*item.product.price,0),address=isPickup?'':[deliveryQuote.address.street,deliveryNumberInput.value.trim(),deliveryQuote.address.neighborhood,deliveryQuote.address.city+' - '+deliveryQuote.address.state,deliveryQuote.address.cep].filter(Boolean).join(', ');const lines=['Olá! Quero fazer um pedido no Yeti Gelinhos Gourmet.','','Nome: '+name,'','Pedido:',...orderItems.map(item=>'• '+item.quantity+'x '+item.product.name+' — '+money(item.product.price*item.quantity)),'','Subtotal: '+money(subtotal),'Entrega: '+(isPickup?'Retirada na empresa (grátis)':deliveryQuote.distanceKm.toLocaleString('pt-BR',{maximumFractionDigits:2})+' km de ida — '+money(fee)),...(address?['Endereço: '+address]:[]),'Total: '+money(subtotal+fee),...(notes?['Observações: '+notes]:[]),'','Aguardo confirmação. Pagamento a combinar.'];window.open('https://wa.me/'+WHATSAPP+'?text='+encodeURIComponent(lines.join('\n')),'_blank','noopener,noreferrer')});
+    productsEl.addEventListener('click',e=>{const b=e.target.closest('[data-index]');if(!b||b.disabled)return;const id=String(b.dataset.index),p=products.find(item=>String(item.id)===id),current=cart.get(id)||0;if(!p)return;if(p.stock!=null&&current>=p.stock){toast('Não há mais unidades disponíveis');return}cart.set(id,current+1);render();toast(p.name+' adicionado à sacola')});
+    itemsEl.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b)return;const id=String(b.dataset.index),p=products.find(item=>String(item.id)===id),action=b.dataset.action;if(!p)return;if(action==='plus'){if(p.stock!=null&&(cart.get(id)||0)>=p.stock){toast('Limite de estoque atingido');return}cart.set(id,(cart.get(id)||0)+1)}if(action==='minus'){const q=(cart.get(id)||0)-1;if(q<=0)cart.delete(id);else cart.set(id,q)}if(action==='remove')cart.delete(id);render()});
+    document.querySelector('#order-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!cart.size) return;
+      if (!menuClient) { toast('Não foi possível registrar o pedido agora. Tente novamente em instantes.'); return; }
+      const customerName = document.querySelector('#customer').value.trim();
+      const method = fulfillmentSelect.value;
+      const notes = document.querySelector('#notes').value.trim();
+      const isPickup = method === 'Retirada';
+      if (!isPickup && !deliveryQuote) return;
+      const fee = isPickup ? 0 : deliveryQuote.fee;
+      const waWindow = window.open('about:blank', '_blank');
+      if (!waWindow) { toast('Permita a abertura de uma nova aba para continuar pelo WhatsApp.'); return; }
+      waWindow.opener = null;
+      const sendButton = document.querySelector('#send');
+      sendButton.disabled = true;
+      sendButton.textContent = 'Registrando pedido…';
+      try {
+        const { data, error } = await menuClient.rpc('create_order_from_site', {
+          p_items: Array.from(cart, ([productId, quantity]) => ({product_id:productId, quantity})),
+          p_fulfillment: method,
+          p_delivery_fee: fee
+        });
+        if (error) throw error;
+        if (!data || !data.id) throw new Error('O sistema não retornou o número do pedido.');
+        const address = isPickup ? '' : [deliveryQuote.address.street, deliveryNumberInput.value.trim(), deliveryQuote.address.neighborhood, deliveryQuote.address.city + ' - ' + deliveryQuote.address.state, deliveryQuote.address.cep].filter(Boolean).join(', ');
+        const lines = [
+          'Olá! Quero fazer um pedido no Yeti Gelinhos Gourmet.',
+          '',
+          'Nome: ' + customerName,
+          'Pedido: #' + String(data.id).slice(0, 8).toUpperCase(),
+          '',
+          'Pedido:',
+          ...(data.items || []).map(item => '• ' + item.quantity + 'x ' + item.name + ' — ' + money(Number(item.unit_price) * Number(item.quantity))),
+          '',
+          'Subtotal: ' + money(Number(data.subtotal)),
+          'Entrega: ' + (isPickup ? 'Retirada na empresa (grátis)' : Number(deliveryQuote.distanceKm).toLocaleString('pt-BR',{maximumFractionDigits:2}) + ' km de ida — ' + money(Number(data.delivery_fee))),
+          ...(address ? ['Endereço: ' + address] : []),
+          'Total: ' + money(Number(data.total)),
+          ...(notes ? ['Observações: ' + notes] : []),
+          '',
+          'Aguardo confirmação. Pagamento a combinar.'
+        ];
+        waWindow.location.href = 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(lines.join('\n'));
+        cart.clear();
+        render();
+        toast('Pedido registrado. Confirme pelo WhatsApp.');
+      } catch (error) {
+        waWindow.close();
+        toast(error.message || 'Não foi possível registrar o pedido. Confira a conexão e tente novamente.');
+      } finally {
+        sendButton.textContent = 'Fazer pedido pelo WhatsApp';
+        render();
+      }
+    });
     const menuConfig=siteConfig;
     const menuClient=window.supabase?.createClient&&menuConfig.supabaseUrl&&menuConfig.supabasePublishableKey
       ?window.supabase.createClient(menuConfig.supabaseUrl,menuConfig.supabasePublishableKey):null;
@@ -90,8 +143,8 @@
       if(!menuClient)return;
       const {data,error}=await menuClient.from('products').select('id,name,price,stock,sort_order,image,active').order('sort_order');
       if(error){toast('Não foi possível atualizar o cardápio agora');return}
-      const fallbackById=new Map(products.map(product=>[Number(product.id),product]));
-      const shared=(data||[]).filter(item=>item.active!==false).map(item=>{const fallback=fallbackById.get(Number(item.id))||{};return {...fallback,...item,id:Number(item.id),price:Number(item.price),image:item.image||fallback.image||''}});
+      const fallbackById=new Map(products.map(product=>[String(product.id),product]));
+      const shared=(data||[]).filter(item=>item.active!==false).map(item=>{const fallback=fallbackById.get(String(item.id))||{};return {...fallback,...item,id:String(item.id),price:Number(item.price),image:item.image||fallback.image||''}});
       products.splice(0,products.length,...shared);
       renderProducts();render();
     }    render();
