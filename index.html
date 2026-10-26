@@ -82,16 +82,16 @@
       ['galak','#e5e6eb'],
       ['capuccino','#f2dfd2'],
       ['ninho com blueberry','#e1e8ff'],
-      ['limao','#e0f0dc'],
-      ['maracuja','#e1e9ff'],
+      ['limão','#e0f0dc'],
+      ['maracujá','#e1e9ff'],
       ['ninho com geleia de morango','#fbe1ec'],
-      ['pacoca','#fff0d7'],
+      ['paçoca','#fff0d7'],
       ['nutella','#f7dce2'],
       ['abacaxi com coco','#fff0c0'],
       ['pudim','#ffe1d0'],
       ['churros','#ffe5cf']
     ]);
-    function flavorTint(name){return flavorTints.get(String(name||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').trim().replace(/\\s+/g,' ').toLocaleLowerCase('pt-BR'))||'#e8f4ff'}
+    function flavorTint(name){return flavorTints.get(String(name||'').trim().toLocaleLowerCase('pt-BR'))||'#e8f4ff'}
     function renderProducts(){productsEl.replaceChildren();products.forEach((p)=>{const card=document.createElement('article');card.className='product';card.style.setProperty('--product-tint',flavorTint(p.name));const top=document.createElement('div');top.className='product-top';const title=document.createElement('h3');title.textContent=p.name;top.append(title);if(p.image){const photo=document.createElement('img');photo.className='product-photo';photo.src=/^https?:\/\//i.test(p.image)||p.image.startsWith('/')?p.image:'./'+p.image;photo.alt='Gelinhos sabor '+p.name;photo.loading='lazy';top.append(photo)}else{const emoji=document.createElement('span');emoji.className='emoji';emoji.setAttribute('aria-hidden','true');emoji.textContent=p.emoji||'🍧';top.append(emoji)}const price=document.createElement('div');price.className='price';price.textContent=money(p.price);card.append(top,price);const soldOut=p.stock===0;if(p.stock!=null){const availability=document.createElement('div');availability.className='stock-status '+(soldOut?'sold':'');availability.textContent=soldOut?'Esgotado':'Disponível';card.append(availability)}const button=document.createElement('button');button.className='add';button.type='button';button.dataset.index=String(p.id);button.disabled=soldOut;button.textContent=soldOut?'Indisponível':'Adicionar +';card.append(button);productsEl.append(card)})}
     renderProducts();
     function render(){let count=0,subtotal=0;itemsEl.replaceChildren();cart.forEach((qty,id)=>{const p=products.find(item=>String(item.id)===id);if(!p)return;count+=qty;subtotal+=qty*p.price;const li=document.createElement('li');li.innerHTML=`<div><div class="item-name"></div><div class="item-controls"><button class="qty-btn" data-action="minus" data-index="${id}" aria-label="Remover uma unidade">−</button><span>${qty}</span><button class="qty-btn" data-action="plus" data-index="${id}" aria-label="Adicionar uma unidade">+</button><button class="remove" data-action="remove" data-index="${id}">tirar</button></div></div><strong>${money(qty*p.price)}</strong>`;li.querySelector('.item-name').textContent=p.name;li.querySelector('[data-action="minus"]').setAttribute('aria-label','Remover uma unidade de '+p.name);li.querySelector('[data-action="plus"]').setAttribute('aria-label','Adicionar uma unidade de '+p.name);itemsEl.append(li)});const isPickup=fulfillmentSelect.value==='Retirada',fee=isPickup?0:(deliveryQuote?.fee||0);document.querySelector('#cart-count').textContent=count;document.querySelector('#subtotal').textContent=money(subtotal);document.querySelector('#delivery-fee').textContent=isPickup?'Grátis':deliveryQuote?money(fee):deliveryQuoteBusy?'Calculando...':'Informe o CEP';document.querySelector('#total').textContent=money(subtotal+fee);emptyEl.hidden=count>0;itemsEl.hidden=count===0;document.querySelector('#send').disabled=count===0||!fulfillmentSelect.value||(!isPickup&&(!deliveryQuote||deliveryQuoteBusy))}
