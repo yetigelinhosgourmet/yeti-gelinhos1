@@ -226,11 +226,13 @@
     saveButton.disabled = true;
     setStatus(menuStatus, 'Adicionando sabor…');
     try {
-      const id = Math.max(0, ...products.map(product => Number(product.id))) + 1;
-      const sortOrder = Math.max(0, ...products.map(product => Number(product.sort_order))) + 1;
-      const image = file ? await uploadImage(file, id) : null;
+      // Let Postgres generate the product id. Existing catalogs may use UUIDs,
+      // so calculating the next id in the browser can turn into NaN/null.
+      const sortOrder = products.reduce((max, product) => Math.max(max, Number(product.sort_order) || 0), 0) + 1;
+      const imageKey = 'new-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+      const image = file ? await uploadImage(file, imageKey) : null;
       const { error } = await client.from('products').insert({
-        id, name, price, stock, image, active: true, sort_order: sortOrder
+        name, price, stock, image, active: true, sort_order: sortOrder
       });
       if (error) throw error;
       document.querySelector('#new-name').value = '';
