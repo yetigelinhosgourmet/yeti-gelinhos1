@@ -17,7 +17,7 @@
   const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
   const EMPTY_IMAGE = 'data:image/svg+xml,%3Csvg xmlns=%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width=%22160%22 height=%22160%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23f2f8ff%22%2F%3E%3Ctext x=%2250%25%22 y=%2252%25%22 text-anchor=%22middle%22 fill=%22%23637894%22 font-family=%22sans-serif%22 font-size=%2216%22%3ESem%20foto%3C%2Ftext%3E%3C%2Fsvg%3E';
   function normalizeProductName(value) {
-    return String(value || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').trim().replace(/\\s+/g, ' ').toLocaleLowerCase('pt-BR');
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR');
   }
 
   function setStatus(el, text, kind = '') {
