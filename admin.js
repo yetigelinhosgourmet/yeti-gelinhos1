@@ -134,12 +134,18 @@
     if (!confirmed) return;
     setStatus(menuStatus, 'Excluindo sabor…');
     try {
-      const { error } = await client.from('products').delete().eq('id', product.id);
+      const { data: deletedRows, error } = await client.from('products')
+        .delete()
+        .eq('id', product.id)
+        .select('id');
       if (error) {
         if (error.code === '23503' || /foreign key|constraint/i.test(error.message || '')) {
           throw new Error('Este sabor está associado a pedidos. Desative-o para preservar o histórico.');
         }
         throw error;
+      }
+      if (!deletedRows?.length) {
+        throw new Error('O banco não confirmou a exclusão. Aplique a migração supabase/migration_product_delete_rls.sql no Supabase e tente novamente.');
       }
       products = products.filter(item => item.id !== product.id);
       renderProducts();
