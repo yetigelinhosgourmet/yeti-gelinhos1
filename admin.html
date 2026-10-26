@@ -8,10 +8,10 @@
   <style>
     :root{--ink:#10234f;--muted:#637894;--blue:#1455c0;--line:#dce9f8;--ice:#f2f8ff}
     *{box-sizing:border-box}body{margin:0;background:var(--ice);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-    header{background:#fff;border-bottom:1px solid var(--line);padding:18px 22px}.top{max-width:860px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:16px}.brand{font-weight:800;color:var(--ink);text-decoration:none}.back{color:var(--blue);font-weight:700}
-    main{max-width:860px;margin:36px auto;padding:0 18px}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 14px 40px #16418415}.card h1{font:32px Georgia,serif;margin:0 0 5px}.help,.muted{color:var(--muted)}.help{margin:0 0 20px}.form{display:grid;gap:14px;max-width:440px}.form label,.row label{font-size:13px;font-weight:700}.form input,.row input{display:block;width:100%;margin-top:5px;border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--ink);font:inherit}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.button{border:0;border-radius:10px;padding:11px 16px;font:inherit;font-weight:800;cursor:pointer}.primary{background:var(--blue);color:#fff}.secondary{background:#edf4fc;color:var(--ink)}.button:disabled{opacity:.55;cursor:wait}.status{min-height:24px;color:var(--muted);font-size:14px}.status.error{color:#a33d4b}.status.success{color:#267849}
-    .menu-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.rows{display:grid;gap:10px;margin-top:18px}.row{display:grid;grid-template-columns:minmax(180px,1fr) 130px 130px 130px;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:12px}.row strong{font-size:14px}.row label{color:var(--muted);font-weight:600}.row input{padding:9px}.hidden{display:none!important}
-    @media(max-width:560px){main{margin:22px auto}.card{padding:18px}.row{grid-template-columns:1fr 1fr}.row label:first-child{grid-column:1/-1}}
+    header{background:#fff;border-bottom:1px solid var(--line);padding:18px 22px}.top{max-width:980px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:16px}.brand{font-weight:800;color:var(--ink);text-decoration:none}.back{color:var(--blue);font-weight:700}
+    main{max-width:980px;margin:36px auto;padding:0 18px}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 14px 40px #16418415}.card h1{font:32px Georgia,serif;margin:0 0 5px}.help,.muted{color:var(--muted)}.help{margin:0 0 20px}.form{display:grid;gap:14px;max-width:440px}.form label{font-size:13px;font-weight:700}.form input{display:block;width:100%;margin-top:5px;border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--ink);font:inherit}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.button{border:0;border-radius:10px;padding:11px 16px;font:inherit;font-weight:800;cursor:pointer}.primary{background:var(--blue);color:#fff}.secondary{background:#edf4fc;color:var(--ink)}.button:disabled{opacity:.55;cursor:wait}.status{min-height:24px;color:var(--muted);font-size:14px}.status.error{color:#a33d4b}.status.success{color:#267849}
+    .menu-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.rows{display:grid;gap:12px;margin-top:18px}.row{display:grid;grid-template-columns:100px minmax(150px,1fr) 110px 110px;align-items:center;gap:12px;border:1px solid var(--line);border-radius:14px;padding:14px}.row label,.new-product label{display:block;color:var(--muted);font-size:13px;font-weight:700}.row input:not([type=checkbox]),.new-product input:not([type=checkbox]){display:block;width:100%;margin-top:5px;border:1px solid var(--line);border-radius:9px;padding:9px;color:var(--ink);font:inherit}.photo-wrap{display:grid;gap:7px}.photo-preview{width:84px;height:84px;object-fit:cover;border-radius:10px;background:var(--ice)}.row input[type=file],.new-product input[type=file]{font-size:12px;max-width:100%}.active-label{display:flex!important;align-items:center;gap:8px;margin-top:10px}.new-product{border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:24px;background:#f8fbff}.new-product h2{font:24px Georgia,serif;margin:0 0 12px}.new-grid{display:grid;grid-template-columns:minmax(150px,1fr) 120px 120px minmax(180px,1fr);gap:12px;align-items:end}.hidden{display:none!important}.inactive-row{background:#fbfcfe;opacity:.78}
+    @media(max-width:650px){main{margin:22px auto}.card{padding:18px}.row{grid-template-columns:82px 1fr 1fr}.photo-wrap{grid-row:span 2}.new-grid{grid-template-columns:1fr 1fr}.new-grid label:first-child,.new-grid label:last-child{grid-column:1/-1}}
   </style>
 </head>
 <body>
@@ -30,7 +30,17 @@
     <section class="card hidden" id="menu-panel">
       <div class="menu-head"><div><h1>Gerenciar sabores</h1><p class="help">As alterações são compartilhadas com todos os clientes.</p></div><button class="button secondary" id="logout-button" type="button">Sair</button></div>
       <div class="rows" id="product-rows"></div>
-      <div class="actions"><button class="button primary" id="save-button" type="button">Salvar cardápio</button></div>
+      <section class="new-product" aria-labelledby="new-product-title">
+        <h2 id="new-product-title">Adicionar novo sabor</h2>
+        <div class="new-grid">
+          <label>Nome do sabor<input id="new-name" type="text" maxlength="80" placeholder="Ex.: Morango com leite condensado"></label>
+          <label>Preço (R$)<input id="new-price" type="number" min="0.01" step="0.01" placeholder="7,00"></label>
+          <label>Estoque<input id="new-stock" type="number" min="0" step="1" placeholder="Sem controle"></label>
+          <label>Foto do produto<input id="new-image" type="file" accept="image/jpeg,image/png,image/webp"></label>
+        </div>
+        <div class="actions"><button class="button secondary" id="add-product-button" type="button">Adicionar sabor</button></div>
+      </section>
+      <div class="actions"><button class="button primary" id="save-button" type="button">Salvar alterações</button></div>
       <p class="status" id="menu-status" role="status" aria-live="polite"></p>
     </section>
   </main>
