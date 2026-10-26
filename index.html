@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1455c0">
+  <title>Yeti Gelinhos Gourmet | Peça pelo WhatsApp</title>
+  <style>
+    :root{--ink:#10234f;--muted:#637894;--berry:#1455c0;--berry-dark:#073b91;--cream:#f2f8ff;--paper:#fff;--line:#dce9f8;--mint:#d7efff;--shadow:0 14px 40px #16418415}
+    *{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.wrap{max-width:1120px;margin:auto;padding:0 22px}
+    header{padding:22px 0;background:#fbfdff;border-bottom:1px solid var(--line)}.nav{display:flex;align-items:center;justify-content:space-between;gap:18px}.brand{display:flex;align-items:center;gap:12px;color:inherit;text-decoration:none}.logo{width:54px;height:54px;border-radius:50%;background:#e7f5ff;display:block;object-fit:cover;border:2px solid #9ed7ff;box-shadow:0 3px 10px #12499020}.brand strong{display:block;font-size:17px;letter-spacing:.01em}.brand small{color:var(--muted)}.cart-link{border:1px solid var(--line);background:#fff;border-radius:999px;padding:10px 16px;color:var(--ink);font-weight:700}.cart-link span{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;margin-left:5px;background:var(--berry);color:#fff;border-radius:99px;font-size:12px}
+    .hero-banner{width:100%;aspect-ratio:3/1;margin:32px 0 42px;overflow:hidden;border-radius:28px;background:#1455c0;box-shadow:var(--shadow)}.hero-banner img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+    .content{display:grid;grid-template-columns:1fr;gap:30px;align-items:start;padding:12px 0 70px}.section-title{font-family:Georgia,serif;font-size:30px;margin:0 0 6px}.section-sub{margin:0 0 22px;color:var(--muted)}.address-hint{font-size:13px;color:var(--muted);margin:0}.grid{display:grid;grid-template-columns:1fr;gap:14px}.product{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:0;box-shadow:0 5px 20px #542b1708;display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,280px);grid-template-rows:auto auto auto 1fr;min-height:250px;overflow:hidden}.product-top{display:contents}.product h3{grid-column:1;grid-row:1;font-size:16px;line-height:1.3;margin:18px 18px 0}.product .emoji{font-size:25px}.product-photo{grid-column:2;grid-row:1/5;width:100%;height:100%;min-height:250px;object-fit:cover;object-position:center;border-radius:0;background:#eef7ff}.price{grid-column:1;grid-row:2;font-weight:800;color:var(--berry);margin:10px 18px 14px}.add{grid-column:1;grid-row:4;align-self:end;justify-self:start;margin:0 18px 18px;border:0;border-radius:999px;background:#e8f3ff;color:var(--berry-dark);font-weight:750;padding:9px 15px}.add:hover{background:#d6eaff}
+    .basket{position:static;background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:var(--shadow)}.basket h2{font-size:19px;margin:0}.basket-head{display:flex;justify-content:space-between;align-items:center}.empty{color:#7187a3;text-align:center;padding:28px 8px;border-bottom:1px dashed var(--line)}.items{list-style:none;padding:0;margin:16px 0}.items li{display:grid;grid-template-columns:1fr auto;gap:7px;padding:12px 0;border-bottom:1px solid var(--line)}.item-name{font-weight:700}.item-controls{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px}.qty-btn{width:26px;height:26px;border:1px solid var(--line);background:white;border-radius:50%;font-weight:700}.remove{border:0;background:transparent;color:var(--muted);font-size:12px;text-decoration:underline;padding:0}.totals{padding-top:5px}.total-row{display:flex;justify-content:space-between;margin:7px 0;color:var(--muted)}.total-row.grand{color:var(--ink);font-size:18px;font-weight:800;border-top:1px dashed var(--line);padding-top:13px;margin-top:13px}.form{margin-top:18px;display:grid;gap:11px}.form label{font-size:13px;font-weight:700}.form input,.form select,.form textarea{display:block;width:100%;border:1px solid var(--line);border-radius:11px;padding:11px 12px;background:#fff;margin-top:5px;color:var(--ink)}.form textarea{resize:vertical;min-height:70px}.send{width:100%;border:0;border-radius:12px;background:#218c55;color:white;padding:13px;font-weight:800;margin-top:3px}.send:hover{background:#167444}.send:disabled{opacity:.45;cursor:not-allowed}.notice{font-size:12px;color:var(--muted);margin:0;text-align:center}.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);opacity:0;transition:.2s;background:#10234f;color:white;padding:10px 16px;border-radius:99px;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}footer{border-top:1px solid var(--line);padding:24px 0;color:var(--muted);font-size:13px;text-align:center}
+    .stock-status{grid-column:1;grid-row:3;font-size:12px;color:#41805b;margin:0 18px 10px}.stock-status.sold{color:#a33d4b}.add:disabled{opacity:.55;cursor:not-allowed}
+    @media(max-width:800px){.hero-banner{aspect-ratio:16/9;margin:22px 0 30px}.content{grid-template-columns:1fr}.basket{position:static}.grid{grid-template-columns:1fr}}
+    @media(max-width:480px){.wrap{padding:0 15px}.grid{grid-template-columns:1fr}.product{grid-template-columns:minmax(0,1fr) minmax(140px,42%);min-height:200px}.product-photo{min-height:200px}.product h3{font-size:15px}.hero-banner{border-radius:18px}.basket{padding:17px}.manage-row{grid-template-columns:1fr 1fr}.manage-row strong{grid-column:1/-1}}
+  </style>
+</head>
+<body>
+  <header><div class="wrap nav">
+    <a class="brand" href="#inicio" aria-label="Yeti Gelinhos Gourmet, início"><img class="logo" src="images/yeti-logo.jpg" alt="Logo do Yeti Gelinhos Gourmet"><span><strong>Yeti Gelinhos Gourmet</strong><small>Gelinhos gourmet • Sabor e alegria</small></span></a>
+    <a class="cart-link" href="#sacola">Minha sacola <span id="cart-count">0</span></a>
+  </div></header>
+  <main id="inicio" class="wrap">
+    <section class="hero-banner" aria-label="Yeti Gelinhos Gourmet"><img src="images/yeti-banner-wide.png" alt="Mascote Yeti ao lado de gelinhos gourmet em embalagens coloridas com a etiqueta da marca"></section>
+    <div class="content">
+      <section aria-labelledby="menu-title"><h2 id="menu-title" class="section-title">Nosso cardápio</h2><p class="section-sub">Escolha seus sabores e adicione à sacola.</p><div id="products" class="grid"></div></section>
+      <aside id="sacola" class="basket" aria-labelledby="basket-title"><div class="basket-head"><h2 id="basket-title">Sua sacola</h2></div><div id="empty" class="empty">🛍️<br>Sua sacola está vazia</div><ul id="items" class="items" hidden></ul>
+        <div class="totals"><div class="total-row"><span>Subtotal</span><strong id="subtotal">R$ 0,00</strong></div><div class="total-row"><span>Entrega</span><strong id="delivery-fee">Escolha entrega ou retirada</strong></div><div class="total-row grand"><span>Total</span><strong id="total">R$ 0,00</strong></div></div>
+        <form id="order-form" class="form"><label>Seu nome<input id="customer" name="customer" placeholder="Como podemos te chamar?" autocomplete="name" required></label><label>Como prefere receber?<select id="fulfillment" required><option value="">Escolha uma opção</option><option value="Entrega">Entrega em Mauá, Santo André e Ribeirão Pires</option><option value="Retirada">Retirada na empresa</option></select></label><div id="delivery-fields" hidden><label>CEP para entrega<input id="delivery-cep" name="postal-code" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" required></label><p id="delivery-address" class="address-hint" role="status" aria-live="polite">Informe o CEP para calcular o frete.</p><label>Número e complemento<input id="delivery-number" autocomplete="address-line2" placeholder="Número, apartamento ou complemento" required></label></div><label>Observações adicionais<textarea id="notes" placeholder="Alguma orientação para o pedido? (opcional)"></textarea></label><button class="send" id="send" type="submit" disabled>Fazer pedido pelo WhatsApp</button><p class="notice">Frete calculado a R$ 2,00 por km de ida a partir do CEP 09360-470. Distância estimada pela rota; confirme o valor final pelo WhatsApp.</p></form>
+      </aside>
+    </div>
+  </main>
+  <footer><div class="wrap">❄ Yeti Gelinhos Gourmet · Feito com carinho ❄<br></div></footer><div id="toast" class="toast" role="status" aria-live="polite"></div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
+  <script>
+    const WHATSAPP = '5511947991253';
+    const products = [
+      {name:'Ninho com Nutella',price:7,emoji:'🍫',image:'ninho-com-nutella.jpg'}, {name:'Suflair',price:7,emoji:'🍫',image:'suflair.jpg'},
+      {name:'Ninho com Geleia de Morango',price:7,emoji:'🍓',image:'ninho-com-geleia-de-morango.jpg'}, {name:'Paçoca',price:5,emoji:'🥜',image:'pacoca.jpg'},
+      {name:'Maracujá',price:6,emoji:'🍋',image:'maracuja.jpg'}, {name:'Pudim',price:7,emoji:'🍮',image:'pudim.jpg'},
+      {name:'Churros',price:7,emoji:'✨',image:'churros.jpg'}, {name:'Panetone',price:7,emoji:'🎄',image:'panetone.jpg'},
+      {name:'Coco',price:6,emoji:'🥥',image:'coco.jpg'}, {name:'Oreo',price:6,emoji:'🍪',image:'oreo.jpg'},
+      {name:'Abacaxi com Coco',price:7,emoji:'🍍',image:'abacaxi-com-coco.jpg'}, {name:'Galak',price:7,emoji:'🤍',image:'galak.jpg'},
+      {name:'Limão',price:5,emoji:'🍋',image:'limao.jpg'},
+      {name:'Ninho com Geleia de Blueberry',price:8,emoji:'🫐',image:'ninho-geleia-blueberry.jpg'},
+      {name:'Milho',price:6,emoji:'🌽',image:'milho.jpg'},
+      {name:'Capuccino com Nutella',price:7,emoji:'☕',image:'capuccino-com-nutella.jpg'}
+    ];
+    const cart = new Map();
+    const money = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    const productsEl=document.querySelector('#products'), itemsEl=document.querySelector('#items'), emptyEl=document.querySelector('#empty');
+    const siteConfig=window.YETI_CONFIG||{};
+    const fulfillmentSelect=document.querySelector('#fulfillment');
+    const deliveryFields=document.querySelector('#delivery-fields');
+    const deliveryCepInput=document.querySelector('#delivery-cep');
+    const deliveryNumberInput=document.querySelector('#delivery-number');
+    const deliveryAddress=document.querySelector('#delivery-address');
+    let deliveryQuote=null,deliveryQuoteBusy=false,deliveryRequestId=0;
+    async function calculateDelivery(){
+      const cep=deliveryCepInput.value.replace(/\D/g,'');
+      if(cep.length!==8)return;
+      if(!siteConfig.supabaseUrl||!siteConfig.supabasePublishableKey){deliveryQuote=null;deliveryAddress.textContent='O cálculo do frete será ativado após configurar a loja.';render();return}
+      const requestId=++deliveryRequestId;deliveryQuote=null;deliveryQuoteBusy=true;deliveryAddress.textContent='Calculando a distância pela rota...';render();
+      try{
+        const response=await fetch(siteConfig.supabaseUrl.replace(/\/$/,'')+'/functions/v1/calculate-delivery-fee',{method:'POST',headers:{'Content-Type':'application/json','apikey':siteConfig.supabasePublishableKey},body:JSON.stringify({cep})});
+        const result=await response.json();if(!response.ok)throw new Error(result.error||'Não foi possível calcular o frete.');
+        if(requestId!==deliveryRequestId)return;
+        deliveryQuote=result;const a=result.address;deliveryAddress.textContent=[a.street,a.neighborhood,a.city+' - '+a.state,'CEP '+a.cep].filter(Boolean).join(' · ')+' — '+result.distanceKm.toLocaleString('pt-BR',{maximumFractionDigits:2})+' km de ida.';
+      }catch(error){if(requestId!==deliveryRequestId)return;deliveryQuote=null;deliveryAddress.textContent=error.message||'Não foi possível calcular o frete. Confira o CEP.'}
+      finally{if(requestId===deliveryRequestId){deliveryQuoteBusy=false;render()}}
+    }
+    fulfillmentSelect.addEventListener('change',()=>{const isDelivery=fulfillmentSelect.value==='Entrega';deliveryFields.hidden=!isDelivery;deliveryCepInput.required=isDelivery;deliveryNumberInput.required=isDelivery;if(!isDelivery){deliveryRequestId++;deliveryQuote=null;deliveryQuoteBusy=false;deliveryAddress.textContent='Informe o CEP para calcular o frete.'}else if(deliveryCepInput.value.replace(/\D/g,'').length===8)calculateDelivery();render()});
+    deliveryCepInput.addEventListener('input',()=>{deliveryRequestId++;deliveryQuote=null;deliveryQuoteBusy=false;deliveryAddress.textContent='Informe um CEP válido para calcular o frete.';render()});
+    deliveryCepInput.addEventListener('blur',calculateDelivery);
+    function renderProducts(){productsEl.innerHTML='';products.forEach((p,i)=>{const card=document.createElement('article');card.className='product';const visual=p.image?'<img class="product-photo" src="images/'+p.image+'" alt="Gelinhos sabor '+p.name+'" loading="lazy">':'<span class="emoji" aria-hidden="true">'+p.emoji+'</span>';const soldOut=p.stock===0;card.innerHTML='<div class="product-top"><h3>'+p.name+'</h3>'+visual+'</div><div class="price">'+money(p.price)+'</div>'+(p.stock==null?'':'<div class="stock-status '+(soldOut?'sold':'')+'">'+(soldOut?'Esgotado':'Disponível')+'</div>')+'<button class="add" type="button" data-index="'+i+'" '+(soldOut?'disabled':'')+'>'+(soldOut?'Indisponível':'Adicionar +')+'</button>';productsEl.append(card)})}
+    renderProducts();
+    function render(){let count=0,subtotal=0;itemsEl.innerHTML='';cart.forEach((qty,i)=>{const p=products[i];count+=qty;subtotal+=qty*p.price;const li=document.createElement('li');li.innerHTML=`<div><div class="item-name">${p.name}</div><div class="item-controls"><button class="qty-btn" data-action="minus" data-index="${i}" aria-label="Remover uma unidade de ${p.name}">−</button><span>${qty}</span><button class="qty-btn" data-action="plus" data-index="${i}" aria-label="Adicionar uma unidade de ${p.name}">+</button><button class="remove" data-action="remove" data-index="${i}">tirar</button></div></div><strong>${money(qty*p.price)}</strong>`;itemsEl.append(li)});const isPickup=fulfillmentSelect.value==='Retirada',fee=isPickup?0:(deliveryQuote?.fee||0);document.querySelector('#cart-count').textContent=count;document.querySelector('#subtotal').textContent=money(subtotal);document.querySelector('#delivery-fee').textContent=isPickup?'Grátis':deliveryQuote?money(fee):deliveryQuoteBusy?'Calculando...':'Informe o CEP';document.querySelector('#total').textContent=money(subtotal+fee);emptyEl.hidden=count>0;itemsEl.hidden=count===0;document.querySelector('#send').disabled=count===0||!fulfillmentSelect.value||(!isPickup&&(!deliveryQuote||deliveryQuoteBusy))}
+    let toastTimer;function toast(msg){const el=document.querySelector('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),1600)}
+    productsEl.addEventListener('click',e=>{const b=e.target.closest('[data-index]');if(!b||b.disabled)return;const i=Number(b.dataset.index),p=products[i],current=cart.get(i)||0;if(p.stock!=null&&current>=p.stock){toast('Não há mais unidades disponíveis');return}cart.set(i,current+1);render();toast(p.name+' adicionado à sacola')});
+    itemsEl.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b)return;const i=Number(b.dataset.index),action=b.dataset.action;if(action==='plus'){if(products[i].stock!=null&&(cart.get(i)||0)>=products[i].stock){toast('Limite de estoque atingido');return}cart.set(i,(cart.get(i)||0)+1)}if(action==='minus'){const q=(cart.get(i)||0)-1;if(q<=0)cart.delete(i);else cart.set(i,q)}if(action==='remove')cart.delete(i);render()});
+    document.querySelector('#order-form').addEventListener('submit',e=>{e.preventDefault();if(!cart.size)return;const name=document.querySelector('#customer').value.trim(),method=fulfillmentSelect.value,notes=document.querySelector('#notes').value.trim(),isPickup=method==='Retirada';if(!isPickup&&!deliveryQuote)return;const fee=isPickup?0:deliveryQuote.fee,subtotal=Array.from(cart,([i,q])=>products[i].price*q).reduce((a,b)=>a+b,0),address=isPickup?'':[deliveryQuote.address.street,deliveryNumberInput.value.trim(),deliveryQuote.address.neighborhood,deliveryQuote.address.city+' - '+deliveryQuote.address.state,deliveryQuote.address.cep].filter(Boolean).join(', ');const lines=['Olá! Quero fazer um pedido no Yeti Gelinhos Gourmet.','','Nome: '+name,'','Pedido:',...Array.from(cart,([i,q])=>'• '+q+'x '+products[i].name+' — '+money(products[i].price*q)),'','Subtotal: '+money(subtotal),'Entrega: '+(isPickup?'Retirada na empresa (grátis)':deliveryQuote.distanceKm.toLocaleString('pt-BR',{maximumFractionDigits:2})+' km de ida — '+money(fee)),...(address?['Endereço: '+address]:[]),'Total: '+money(subtotal+fee),...(notes?['Observações: '+notes]:[]),'','Aguardo confirmação. Pagamento a combinar.'];window.open('https://wa.me/'+WHATSAPP+'?text='+encodeURIComponent(lines.join('\n')),'_blank','noopener,noreferrer')});
+    const menuConfig=siteConfig;
+    const menuClient=window.supabase?.createClient&&menuConfig.supabaseUrl&&menuConfig.supabasePublishableKey
+      ?window.supabase.createClient(menuConfig.supabaseUrl,menuConfig.supabasePublishableKey):null;
+    async function loadSharedMenu(){
+      if(!menuClient)return;
+      const {data,error}=await menuClient.from('products').select('name,price,stock').order('sort_order');
+      if(error){toast('Não foi possível atualizar o cardápio agora');return}
+      const sharedByName=new Map((data||[]).map(item=>[item.name,item]));
+      products.forEach(product=>{const shared=sharedByName.get(product.name);if(shared){product.price=Number(shared.price);product.stock=shared.stock}});
+      renderProducts();render();
+    }
+    render();
+    void loadSharedMenu();
+  </script>
+</body>
+</html>
+
+
