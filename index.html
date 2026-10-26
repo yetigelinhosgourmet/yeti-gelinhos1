@@ -28,7 +28,7 @@
       <section aria-labelledby="menu-title"><h2 id="menu-title" class="section-title">Nosso cardápio</h2><p class="section-sub">Escolha seus sabores e adicione à sacola.</p><div id="products" class="grid"></div></section>
       <aside id="sacola" class="basket" aria-labelledby="basket-title"><div class="basket-head"><h2 id="basket-title">Sua sacola</h2></div><div id="empty" class="empty">🛍️<br>Sua sacola está vazia</div><ul id="items" class="items" hidden></ul>
         <div class="totals"><div class="total-row"><span>Subtotal</span><strong id="subtotal">R$ 0,00</strong></div><div class="total-row"><span>Entrega</span><strong id="delivery-fee">Escolha entrega ou retirada</strong></div><div class="total-row grand"><span>Total</span><strong id="total">R$ 0,00</strong></div></div>
-        <form id="order-form" class="form"><label>Seu nome<input id="customer" name="customer" placeholder="Como podemos te chamar?" autocomplete="name" required></label><label>Como prefere receber?<select id="fulfillment" required><option value="">Escolha uma opção</option><option value="Entrega">Entrega em Mauá, Santo André e Ribeirão Pires</option><option value="Retirada">Retirada na empresa</option></select></label><div id="delivery-fields" hidden><label>CEP para entrega<input id="delivery-cep" name="postal-code" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" required></label><p id="delivery-address" class="address-hint" role="status" aria-live="polite">Informe o CEP para calcular o frete.</p><label>Número e complemento<input id="delivery-number" autocomplete="address-line2" placeholder="Número, apartamento ou complemento" required></label></div><label>Observações adicionais<textarea id="notes" placeholder="Alguma orientação para o pedido? (opcional)"></textarea></label><button class="send" id="send" type="submit" disabled>Fazer pedido pelo WhatsApp</button><p class="notice">Frete calculado a R$ 2,00 por km de ida a partir do CEP 09360-470. Distância estimada pela rota; confirme o valor final pelo WhatsApp.</p></form>
+        <form id="order-form" class="form"><label>Seu nome<input id="customer" name="customer" placeholder="Como podemos te chamar?" autocomplete="name" required></label><label>Seu telefone para contato<input id="customer-phone" name="tel" type="tel" autocomplete="tel" placeholder="(11) 99999-9999"></label><label>Como prefere receber?<select id="fulfillment" required><option value="">Escolha uma opção</option><option value="Entrega">Entrega em Mauá, Santo André e Ribeirão Pires</option><option value="Retirada">Retirada na empresa</option></select></label><div id="delivery-fields" hidden><label>CEP para entrega<input id="delivery-cep" name="postal-code" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" required></label><p id="delivery-address" class="address-hint" role="status" aria-live="polite">Informe o CEP para calcular o frete.</p><label>Número e complemento<input id="delivery-number" autocomplete="address-line2" placeholder="Número, apartamento ou complemento" required></label></div><label>Observações adicionais<textarea id="notes" placeholder="Alguma orientação para o pedido? (opcional)"></textarea></label><button class="send" id="send" type="submit" disabled>Fazer pedido pelo WhatsApp</button><p class="notice">Frete calculado a R$ 2,00 por km de ida a partir do CEP 09360-470. Distância estimada pela rota; confirme o valor final pelo WhatsApp.</p></form>
       </aside>
     </div>
   </main>
@@ -51,6 +51,7 @@
       {id:16,name:'Capuccino com Nutella',price:7,emoji:'☕',image:'capuccino-com-nutella.jpg'}
     ];
     const cart = new Map();
+    products.forEach(product => { product.stock = 0; });
     const money = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
     const productsEl=document.querySelector('#products'), itemsEl=document.querySelector('#items'), emptyEl=document.querySelector('#empty');
     const siteConfig=window.YETI_CONFIG||{};
@@ -87,11 +88,13 @@
       if (!cart.size) return;
       if (!menuClient) { toast('Não foi possível registrar o pedido agora. Tente novamente em instantes.'); return; }
       const customerName = document.querySelector('#customer').value.trim();
+      const customerPhone = document.querySelector('#customer-phone').value.trim();
       const method = fulfillmentSelect.value;
       const notes = document.querySelector('#notes').value.trim();
       const isPickup = method === 'Retirada';
       if (!isPickup && !deliveryQuote) return;
       const fee = isPickup ? 0 : deliveryQuote.fee;
+      const address = isPickup ? '' : [deliveryQuote.address.street, deliveryNumberInput.value.trim(), deliveryQuote.address.neighborhood, deliveryQuote.address.city + ' - ' + deliveryQuote.address.state, deliveryQuote.address.cep].filter(Boolean).join(', ');
       const waWindow = window.open('about:blank', '_blank');
       if (!waWindow) { toast('Permita a abertura de uma nova aba para continuar pelo WhatsApp.'); return; }
       waWindow.opener = null;
@@ -102,11 +105,14 @@
         const { data, error } = await menuClient.rpc('create_order_from_site', {
           p_items: Array.from(cart, ([productId, quantity]) => ({product_id:productId, quantity})),
           p_fulfillment: method,
-          p_delivery_fee: fee
+          p_delivery_fee: fee,
+          p_customer_name: customerName,
+          p_customer_phone: customerPhone,
+          p_delivery_address: address,
+          p_notes: notes
         });
         if (error) throw error;
         if (!data || !data.id) throw new Error('O sistema não retornou o número do pedido.');
-        const address = isPickup ? '' : [deliveryQuote.address.street, deliveryNumberInput.value.trim(), deliveryQuote.address.neighborhood, deliveryQuote.address.city + ' - ' + deliveryQuote.address.state, deliveryQuote.address.cep].filter(Boolean).join(', ');
         const lines = [
           'Olá! Quero fazer um pedido no Yeti Gelinhos Gourmet.',
           '',
@@ -141,17 +147,34 @@
       ?window.supabase.createClient(menuConfig.supabaseUrl,menuConfig.supabasePublishableKey):null;
     async function loadSharedMenu(){
       if(!menuClient)return;
-      const {data,error}=await menuClient.from('products').select('id,name,price,stock,sort_order,image,active').order('sort_order');
+      const {data,error}=await menuClient.from('products').select('id,name,price,sort_order,image,active').order('sort_order');
       if(error){toast('Não foi possível atualizar o cardápio agora');return}
       const fallbackById=new Map(products.map(product=>[String(product.id),product]));
-      const shared=(data||[]).filter(item=>item.active!==false).map(item=>{const fallback=fallbackById.get(String(item.id))||{};return {...fallback,...item,id:String(item.id),price:Number(item.price),image:item.image||fallback.image||''}});
+      const shared=(data||[]).filter(item=>item.active!==false).map(item=>{const fallback=fallbackById.get(String(item.id))||{};return {...fallback,...item,id:String(item.id),price:Number(item.price),stock:0,image:item.image||fallback.image||''}});
       products.splice(0,products.length,...shared);
       renderProducts();render();
     }    render();
-    void loadSharedMenu();
+    async function loadStockAvailability(){
+      if(!siteConfig.stockApiUrl){toast('O sistema de estoque não está configurado.');return}
+      try{
+        const response=await fetch(siteConfig.stockApiUrl.replace(/\/$/,'')+'/api/menu/products',{cache:'no-store'});
+        const result=await response.json();if(!response.ok||!Array.isArray(result.products))throw new Error(result.error||'Não foi possível consultar o estoque.');
+        const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLocaleLowerCase('pt-BR');
+        const byName=new Map();for(const product of result.products){const key=normalize(product.name);byName.set(key,[...(byName.get(key)||[]),product])}
+        products.forEach(product=>{const matches=byName.get(normalize(product.name))||[];product.stock=matches.length===1?Number(matches[0].stock_quantity):0});
+        renderProducts();render();
+      }catch(error){products.forEach(product=>product.stock=0);renderProducts();render();toast(error.message||'Não foi possível consultar o estoque.')}
+    }
+    void (async()=>{await loadSharedMenu();await loadStockAvailability()})();
   </script>
 </body>
 </html>
+
+
+
+
+
+
 
 
 

@@ -94,14 +94,11 @@
       name.type = 'text'; name.maxLength = 80; name.required = true; name.value = product.name; name.dataset.name = '';
       const price = document.createElement('input');
       price.type = 'number'; price.min = '0.01'; price.step = '0.01'; price.value = Number(product.price).toFixed(2); price.dataset.price = '';
-      const stock = document.createElement('input');
-      stock.type = 'number'; stock.min = '0'; stock.step = '1'; stock.placeholder = 'Sem controle';
-      stock.value = product.stock == null ? '' : String(product.stock); stock.dataset.stock = '';
       const active = document.createElement('input');
       active.type = 'checkbox'; active.checked = product.active !== false; active.dataset.active = '';
       const activeLabel = document.createElement('label');
       activeLabel.className = 'active-label'; activeLabel.append(active, document.createTextNode('Mostrar no cardápio'));
-      row.append(photoWrap, makeLabel('Sabor', name), makeLabel('Preço (R$)', price), makeLabel('Estoque', stock), activeLabel);
+      row.append(photoWrap, makeLabel('Sabor', name), makeLabel('Preço (R$)', price), activeLabel);
       rowsEl.append(row);
     }
   }
@@ -132,7 +129,7 @@
 
   async function loadProducts() {
     const { data, error } = await client.from('products')
-      .select('id,name,price,stock,sort_order,image,active').order('sort_order');
+      .select('id,name,price,sort_order,image,active').order('sort_order');
     if (error) throw error;
     products = data || [];
     renderProducts();
@@ -155,7 +152,7 @@
       title.textContent = 'Pedido #' + order.id.slice(0, 8).toUpperCase() + ' · ' + ({pending:'Aguardando confirmação',confirmed:'Confirmado',cancelled:'Cancelado'}[order.status] || order.status);
       card.append(title);
       const details = document.createElement('p');
-      details.textContent = new Date(order.created_at).toLocaleString('pt-BR') + ' · ' + order.fulfillment_method + ' · Total ' + Number(order.total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+      details.textContent = [order.customer_name || 'Cliente', order.customer_phone, order.fulfillment_method, order.delivery_address, new Date(order.created_at).toLocaleString('pt-BR'), 'Total ' + Number(order.total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})].filter(Boolean).join(' · ');
       card.append(details);
       const itemList = document.createElement('ul');
       itemList.className = 'order-items';
@@ -169,19 +166,14 @@
         const actions = document.createElement('div');
         actions.className = 'order-actions';
         if (order.status === 'pending') {
-          const confirm = document.createElement('button');
-          confirm.className = 'button primary';
-          confirm.type = 'button';
-          confirm.textContent = 'Confirmar e baixar estoque';
-          confirm.addEventListener('click', () => processOrder(order.id, 'confirm'));
-          actions.append(confirm);
+          const openStock = document.createElement('a');
+          openStock.className = 'button primary';
+          openStock.href = 'https://yeti-gelinhos.vercel.app/pedidos';
+          openStock.target = '_blank';
+          openStock.rel = 'noopener noreferrer';
+          openStock.textContent = 'Importar e confirmar no sistema de estoque';
+          actions.append(openStock);
         }
-        const cancel = document.createElement('button');
-        cancel.className = 'button secondary';
-        cancel.type = 'button';
-        cancel.textContent = order.status === 'confirmed' ? 'Cancelar e devolver estoque' : 'Cancelar pedido';
-        cancel.addEventListener('click', () => processOrder(order.id, 'cancel'));
-        actions.append(cancel);
         card.append(actions);
       }
       list.append(card);
@@ -190,7 +182,7 @@
 
   async function loadOrders() {
     const { data, error } = await client.from('orders')
-      .select('id,status,fulfillment_method,total,created_at').order('created_at', {ascending:false}).limit(40);
+      .select('id,status,fulfillment_method,total,created_at,customer_name,customer_phone,delivery_address').order('created_at', {ascending:false}).limit(40);
     if (error) throw error;
     const orderIds = (data || []).map(order => order.id);
     let itemRows = [];
@@ -201,19 +193,6 @@
     }
     orders = (data || []).map(order => ({...order, items:itemRows.filter(item => item.order_id === order.id)}));
     renderOrders();
-  }
-
-  async function processOrder(orderId, action) {
-    const rpc = action === 'confirm' ? 'confirm_order' : 'cancel_order';
-    setStatus(menuStatus, action === 'confirm' ? 'Confirmando pedido e atualizando o estoque…' : 'Cancelando pedido…');
-    try {
-      const { error } = await client.rpc(rpc, {p_order_id:orderId});
-      if (error) throw error;
-      await Promise.all([loadProducts(), loadOrders()]);
-      setStatus(menuStatus, action === 'confirm' ? 'Pedido confirmado e estoque baixado.' : 'Pedido cancelado; o estoque foi atualizado quando necessário.', 'success');
-    } catch (error) {
-      setStatus(menuStatus, 'Não foi possível processar o pedido. ' + imageError(error), 'error');
-    }
   }
 
   async function openAdmin(user) {
@@ -251,17 +230,15 @@
       const row = rowsEl.querySelector('[data-id="' + product.id + '"]');
       const name = row.querySelector('[data-name]').value.trim();
       const price = Number(row.querySelector('[data-price]').value);
-      const stockText = row.querySelector('[data-stock]').value.trim();
-      const stock = stockText === '' ? null : Number(stockText);
       const active = row.querySelector('[data-active]').checked;
       const file = row.querySelector('[data-photo]').files[0] || null;
-      return { id: product.id, name, price, stock, active, file };
+      return { id: product.id, name, price, active, file };
     });
     const allNames = [...updates.map(item => item.name), ...products.filter(p => !updates.some(u => u.id === p.id)).map(p => p.name)];
     const uniqueNames = new Set(allNames.map(name => name.toLocaleLowerCase('pt-BR')));
     if (updates.some(item => !item.name || !Number.isFinite(item.price) || item.price <= 0 ||
-      (item.stock !== null && (!Number.isInteger(item.stock) || item.stock < 0)) || validateImage(item.file)) || uniqueNames.size !== allNames.length) {
-      setStatus(menuStatus, 'Confira nomes diferentes, preços, estoque e fotos (JPG, PNG ou WebP até 5 MB).', 'error');
+      validateImage(item.file)) || uniqueNames.size !== allNames.length) {
+      setStatus(menuStatus, 'Confira nomes diferentes, preços e fotos (JPG, PNG ou WebP até 5 MB).', 'error');
       return;
     }
     saveButton.disabled = true;
@@ -272,7 +249,7 @@
         const oldProduct = products.find(p => p.id === item.id);
         const photoUrl = item.file ? await uploadImage(item.file, item.id) : oldProduct.image;
         const { error } = await client.from('products').update({
-          name: item.name, price: item.price, stock: item.stock, active: item.active, image: photoUrl
+          name: item.name, price: item.price, active: item.active, image: photoUrl
         }).eq('id', item.id);
         if (error) throw error;
       }
@@ -289,11 +266,9 @@
   addButton.addEventListener('click', async () => {
     const name = document.querySelector('#new-name').value.trim();
     const price = Number(document.querySelector('#new-price').value);
-    const stockText = document.querySelector('#new-stock').value.trim();
-    const stock = stockText === '' ? null : Number(stockText);
     const file = document.querySelector('#new-image').files[0] || null;
-    if (!name || !Number.isFinite(price) || price <= 0 || (stock !== null && (!Number.isInteger(stock) || stock < 0))) {
-      setStatus(menuStatus, 'Informe o nome, um preço válido e um estoque válido ou deixe o estoque em branco.', 'error');
+    if (!name || !Number.isFinite(price) || price <= 0) {
+      setStatus(menuStatus, 'Informe o nome e um preço válido.', 'error');
       return;
     }
     if (products.some(product => product.name.toLocaleLowerCase('pt-BR') === name.toLocaleLowerCase('pt-BR'))) {
@@ -312,12 +287,11 @@
       const sortOrder = products.reduce((max, product) => Math.max(max, Number(product.sort_order) || 0), 0) + 1;
       const image = file ? await uploadImage(file, id) : null;
       const { error } = await client.from('products').insert({
-        id, name, price, stock, image, active: true, sort_order: sortOrder
+        id, name, price, image, active: true, sort_order: sortOrder
       });
       if (error) throw error;
       document.querySelector('#new-name').value = '';
       document.querySelector('#new-price').value = '';
-      document.querySelector('#new-stock').value = '';
       document.querySelector('#new-image').value = '';
       await loadProducts();
       setStatus(menuStatus, 'Sabor adicionado. Ele já aparece no cardápio da loja.', 'success');
@@ -341,3 +315,5 @@
     else if (data.session) void openAdmin(data.session.user);
   });
 })();
+
+
