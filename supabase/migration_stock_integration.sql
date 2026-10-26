@@ -98,6 +98,7 @@ set search_path = ''
 as $$
 declare
   v_order_id uuid := gen_random_uuid();
+  v_order_number integer;
   v_item jsonb;
   v_product_id uuid;
   v_quantity integer;
@@ -115,8 +116,12 @@ begin
   select count(*), count(distinct value->>'product_id') into v_count, v_unique_count from jsonb_array_elements(p_items);
   if v_count <> v_unique_count then raise exception 'O pedido contém sabores repetidos de forma inválida.'; end if;
 
-  insert into public.orders (id, status, source, fulfillment_method, delivery_fee, customer_name, customer_phone, delivery_address, notes)
-  values (v_order_id, 'pending', 'site', p_fulfillment, p_delivery_fee, trim(p_customer_name), nullif(trim(coalesce(p_customer_phone, '')), ''), nullif(trim(coalesce(p_delivery_address, '')), ''), nullif(trim(coalesce(p_notes, '')), ''));
+  -- Keep site order numbers unique across concurrent checkout requests.
+  perform pg_advisory_xact_lock(hashtext('public.orders.order_number'));
+  select coalesce(max(order_number), 0) + 1 into v_order_number from public.orders;
+
+  insert into public.orders (id, order_number, status, source, fulfillment_method, delivery_fee, customer_name, customer_phone, delivery_address, notes)
+  values (v_order_id, v_order_number, 'pending', 'site', p_fulfillment, p_delivery_fee, trim(p_customer_name), nullif(trim(coalesce(p_customer_phone, '')), ''), nullif(trim(coalesce(p_delivery_address, '')), ''), nullif(trim(coalesce(p_notes, '')), ''));
 
   for v_item in select value from jsonb_array_elements(p_items) loop
     if coalesce(v_item->>'product_id', '') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then raise exception 'Identificador de sabor inválido.'; end if;
