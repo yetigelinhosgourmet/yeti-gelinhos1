@@ -145,10 +145,18 @@
           'Aguardo confirmação. Pagamento a combinar.'
         ];
         const whatsappText = encodeURIComponent(lines.join('\n'));
-        const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-        const whatsappUrl = isMobile
-          ? 'https://wa.me/' + WHATSAPP + '?text=' + whatsappText
-          : 'https://web.whatsapp.com/send?phone=' + WHATSAPP + '&text=' + whatsappText;
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const whatsappWebUrl = 'https://web.whatsapp.com/send?phone=' + WHATSAPP + '&text=' + whatsappText;
+        const whatsappFallbackUrl = 'https://wa.me/' + WHATSAPP + '?text=' + whatsappText;
+        let whatsappUrl = whatsappWebUrl;
+        if (isAndroid) {
+          const fallback = encodeURIComponent(whatsappFallbackUrl);
+          whatsappUrl = 'intent://send?phone=' + WHATSAPP + '&text=' + whatsappText +
+            '#Intent;scheme=whatsapp;package=com.whatsapp;S.browser_fallback_url=' + fallback + ';end';
+        } else if (isIOS) {
+          whatsappUrl = 'whatsapp://send?phone=' + WHATSAPP + '&text=' + whatsappText;
+        }
         waWindow.location.replace(whatsappUrl);
         cart.clear();
         render();
