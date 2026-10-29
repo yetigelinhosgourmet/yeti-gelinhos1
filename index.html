@@ -140,6 +140,7 @@
           'Entrega: ' + (isPickup ? 'Retirada na empresa (grátis)' : Number(deliveryQuote.distanceKm).toLocaleString('pt-BR',{maximumFractionDigits:2}) + ' km de ida — ' + money(Number(data.delivery_fee))),
           ...(address ? ['Endereço: ' + address] : []),
           'Total: ' + money(Number(data.total)),
+          'Pix: yetigelinhosgourmet@gmail.com',
           ...(notes ? ['Observações: ' + notes] : []),
           '',
           'Aguardo confirmação. Pagamento a combinar.'
