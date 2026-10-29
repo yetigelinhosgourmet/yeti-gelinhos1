@@ -144,7 +144,12 @@
           '',
           'Aguardo confirmação. Pagamento a combinar.'
         ];
-        waWindow.location.href = 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(lines.join('\n'));
+        const whatsappText = encodeURIComponent(lines.join('\n'));
+        const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+        const whatsappUrl = isMobile
+          ? 'https://wa.me/' + WHATSAPP + '?text=' + whatsappText
+          : 'https://web.whatsapp.com/send?phone=' + WHATSAPP + '&text=' + whatsappText;
+        waWindow.location.replace(whatsappUrl);
         cart.clear();
         render();
         toast('Pedido registrado. Confirme pelo WhatsApp.');
