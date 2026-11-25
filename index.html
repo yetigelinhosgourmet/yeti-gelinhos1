@@ -28,7 +28,7 @@
       <section aria-labelledby="menu-title"><h2 id="menu-title" class="section-title">Nosso cardápio</h2><p class="section-sub">Escolha seus sabores e adicione à sacola.</p><div id="products" class="grid"></div></section>
       <aside id="sacola" class="basket" aria-labelledby="basket-title"><div class="basket-head"><h2 id="basket-title">Sua sacola</h2></div><div id="empty" class="empty">🛍️<br>Sua sacola está vazia</div><ul id="items" class="items" hidden></ul>
         <div class="totals"><div class="total-row"><span>Subtotal</span><strong id="subtotal">R$ 0,00</strong></div><div class="total-row"><span>Entrega</span><strong id="delivery-fee">Escolha entrega ou retirada</strong></div><div class="total-row grand"><span>Total</span><strong id="total">R$ 0,00</strong></div></div>
-        <form id="order-form" class="form"><label>Seu nome<input id="customer" name="customer" placeholder="Como podemos te chamar?" autocomplete="name" required></label><label>Como prefere receber?<select id="fulfillment" required><option value="">Escolha uma opção</option><option value="Entrega">Entrega em Mauá, Santo André e Ribeirão Pires</option><option value="Retirada">Retirada na empresa</option></select></label><div id="delivery-fields" hidden><label>CEP para entrega<input id="delivery-cep" name="postal-code" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" required></label><p id="delivery-address" class="address-hint" role="status" aria-live="polite">Informe o CEP para calcular o frete.</p><label>Número e complemento<input id="delivery-number" autocomplete="address-line2" placeholder="Número, apartamento ou complemento" required></label></div><label>Observações adicionais<textarea id="notes" placeholder="Alguma orientação para o pedido? (opcional)"></textarea></label><button class="send" id="send" type="submit" disabled>Fazer pedido pelo WhatsApp</button><p class="notice">Frete calculado a R$ 1,10 por km de ida a partir do CEP 09360-470. Distância estimada pela rota; confirme o valor final pelo WhatsApp.</p></form>
+        <form id="order-form" class="form"><label>Seu nome<input id="customer" name="customer" placeholder="Como podemos te chamar?" autocomplete="name" required></label><label>Como prefere receber?<select id="fulfillment" required><option value="">Escolha uma opção</option><option value="Entrega">Entrega em Mauá, Santo André e Ribeirão Pires</option><option value="Retirada">Retirada na empresa</option></select></label><div id="delivery-fields" hidden><label>CEP para entrega<input id="delivery-cep" name="postal-code" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" required></label><p id="delivery-address" class="address-hint" role="status" aria-live="polite">Informe o CEP para calcular o frete.</p><label>Número e complemento<input id="delivery-number" autocomplete="address-line2" placeholder="Número, apartamento ou complemento" required></label><label>Data desejada para entrega (opcional)<input id="delivery-date" type="date" aria-describedby="delivery-date-hint"></label><p id="delivery-date-hint" class="address-hint">Se deixar em branco, agendaremos para amanhã.</p></div><label>Observações adicionais<textarea id="notes" placeholder="Alguma orientação para o pedido? (opcional)"></textarea></label><button class="send" id="send" type="submit" disabled>Fazer pedido pelo WhatsApp</button><p class="notice">Frete calculado a R$ 1,10 por km de ida a partir do CEP 09360-470. Distância estimada pela rota; confirme o valor final pelo WhatsApp.</p></form>
       </aside>
     </div>
   </main>
@@ -59,6 +59,9 @@
     const deliveryFields=document.querySelector('#delivery-fields');
     const deliveryCepInput=document.querySelector('#delivery-cep');
     const deliveryNumberInput=document.querySelector('#delivery-number');
+    const deliveryDateInput=document.querySelector('#delivery-date');
+    const todayLocal = new Date();
+    deliveryDateInput.min = [todayLocal.getFullYear(), String(todayLocal.getMonth()+1).padStart(2,'0'), String(todayLocal.getDate()).padStart(2,'0')].join('-');
     const deliveryAddress=document.querySelector('#delivery-address');
     let deliveryQuote=null,deliveryQuoteBusy=false,deliveryRequestId=0;
     async function calculateDelivery(){
@@ -106,6 +109,7 @@
       const customerName = document.querySelector('#customer').value.trim();
       const method = fulfillmentSelect.value;
       const notes = document.querySelector('#notes').value.trim();
+      const scheduledDeliveryDate = method === 'Entrega' ? (deliveryDateInput.value || null) : null;
       const isPickup = method === 'Retirada';
       if (!isPickup && !deliveryQuote) return;
       const fee = isPickup ? 0 : deliveryQuote.fee;
@@ -123,7 +127,8 @@
           p_delivery_fee: fee,
           p_customer_name: customerName,
           p_delivery_address: address,
-          p_notes: notes
+          p_notes: notes,
+          p_scheduled_delivery_date: scheduledDeliveryDate
         });
         if (error) throw error;
         if (!data || !data.id) throw new Error('O sistema não retornou o número do pedido.');
@@ -138,6 +143,7 @@
           '',
           'Subtotal: ' + money(Number(data.subtotal)),
           'Entrega: ' + (isPickup ? 'Retirada na empresa (grátis)' : Number(deliveryQuote.distanceKm).toLocaleString('pt-BR',{maximumFractionDigits:2}) + ' km de ida — ' + money(Number(data.delivery_fee))),
+          ...(!isPickup && data.scheduled_delivery_date ? ['Entrega agendada para: ' + new Date(data.scheduled_delivery_date + 'T12:00:00').toLocaleDateString('pt-BR')] : []),
           ...(address ? ['Endereço: ' + address] : []),
           'Total: ' + money(Number(data.total)),
           'Pix: yetigelinhosgourmet@gmail.com',
