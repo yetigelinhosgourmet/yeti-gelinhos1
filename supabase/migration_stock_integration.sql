@@ -35,6 +35,7 @@ alter table public.orders add column if not exists customer_name text;
 alter table public.orders add column if not exists customer_phone text;
 alter table public.orders add column if not exists delivery_address text;
 alter table public.orders add column if not exists notes text;
+alter table public.orders add column if not exists scheduled_delivery_date date;
 alter table public.orders drop constraint if exists orders_status_check;
 
 update public.orders set status = 'pending' where status is null;
@@ -83,6 +84,7 @@ create policy "Admins can view order items" on public.order_items
   using (exists (select 1 from public.admin_users where user_id = (select auth.uid())));
 
 drop function if exists public.create_order_from_site(jsonb, text, numeric);
+drop function if exists public.create_order_from_site(jsonb, text, numeric, text, text, text, text);
 create or replace function public.create_order_from_site(
   p_items jsonb,
   p_fulfillment text,
@@ -90,7 +92,8 @@ create or replace function public.create_order_from_site(
   p_customer_name text default null,
   p_customer_phone text default null,
   p_delivery_address text default null,
-  p_notes text default null
+  p_notes text default null,
+  p_scheduled_delivery_date date default null
 )
 returns jsonb
 language plpgsql
@@ -109,11 +112,16 @@ declare
   v_count integer;
   v_unique_count integer;
   v_reserved integer := 0;
+  v_scheduled_delivery_date date;
 begin
   if p_fulfillment not in ('Entrega', 'Retirada') then raise exception 'Escolha entrega ou retirada.'; end if;
   if p_delivery_fee is null or p_delivery_fee < 0 or (p_fulfillment = 'Retirada' and p_delivery_fee <> 0) then raise exception 'Taxa de entrega inválida.'; end if;
   if p_customer_name is null or length(trim(p_customer_name)) < 2 then raise exception 'Informe seu nome.'; end if;
   if p_fulfillment = 'Entrega' and coalesce(trim(p_delivery_address), '') = '' then raise exception 'Informe o endereço de entrega.'; end if;
+  if p_fulfillment = 'Entrega' then
+    v_scheduled_delivery_date := coalesce(p_scheduled_delivery_date, (now() at time zone 'America/Sao_Paulo')::date + 1);
+    if v_scheduled_delivery_date < (now() at time zone 'America/Sao_Paulo')::date then raise exception 'Escolha uma data de entrega igual ou posterior a hoje.'; end if;
+  end if;
   if jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 or jsonb_array_length(p_items) > 30 then raise exception 'A sacola está vazia ou contém itens demais.'; end if;
   select count(*), count(distinct value->>'product_id') into v_count, v_unique_count from jsonb_array_elements(p_items);
   if v_count <> v_unique_count then raise exception 'O pedido contém sabores repetidos de forma inválida.'; end if;
@@ -122,8 +130,8 @@ begin
   perform pg_advisory_xact_lock(hashtext('public.orders.order_number'));
   select coalesce(max(order_number), 0) + 1 into v_order_number from public.orders;
 
-  insert into public.orders (id, order_number, status, source, fulfillment_method, delivery_fee, customer_name, customer_phone, delivery_address, notes)
-  values (v_order_id, v_order_number, 'pending', 'site', p_fulfillment, p_delivery_fee, trim(p_customer_name), nullif(trim(coalesce(p_customer_phone, '')), ''), nullif(trim(coalesce(p_delivery_address, '')), ''), nullif(trim(coalesce(p_notes, '')), ''));
+  insert into public.orders (id, order_number, status, source, fulfillment_method, delivery_fee, customer_name, customer_phone, delivery_address, notes, scheduled_delivery_date)
+  values (v_order_id, v_order_number, 'pending', 'site', p_fulfillment, p_delivery_fee, trim(p_customer_name), nullif(trim(coalesce(p_customer_phone, '')), ''), nullif(trim(coalesce(p_delivery_address, '')), ''), nullif(trim(coalesce(p_notes, '')), ''), v_scheduled_delivery_date);
 
   for v_item in select value from jsonb_array_elements(p_items) order by value->>'product_id' loop
     if coalesce(v_item->>'product_id', '') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then raise exception 'Identificador de sabor inválido.'; end if;
@@ -155,11 +163,11 @@ begin
   end loop;
 
   update public.orders set subtotal = v_subtotal, total = v_subtotal + p_delivery_fee where id = v_order_id;
-  return jsonb_build_object('id', v_order_id, 'subtotal', v_subtotal, 'delivery_fee', p_delivery_fee, 'total', v_subtotal + p_delivery_fee, 'items', v_items);
+  return jsonb_build_object('id', v_order_id, 'subtotal', v_subtotal, 'delivery_fee', p_delivery_fee, 'total', v_subtotal + p_delivery_fee, 'scheduled_delivery_date', v_scheduled_delivery_date, 'items', v_items);
 end;
 $$;
-revoke all on function public.create_order_from_site(jsonb, text, numeric, text, text, text, text) from public, anon, authenticated;
-grant execute on function public.create_order_from_site(jsonb, text, numeric, text, text, text, text) to anon, authenticated;
+revoke all on function public.create_order_from_site(jsonb, text, numeric, text, text, text, text, date) from public, anon, authenticated;
+grant execute on function public.create_order_from_site(jsonb, text, numeric, text, text, text, text, date) to anon, authenticated;
 
 -- Impede que a tela antiga do cardápio faça baixa em um estoque paralelo.
 drop function if exists public.confirm_order(uuid);
