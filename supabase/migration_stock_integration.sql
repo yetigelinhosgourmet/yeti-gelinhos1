@@ -118,10 +118,8 @@ begin
   if p_delivery_fee is null or p_delivery_fee < 0 or (p_fulfillment = 'Retirada' and p_delivery_fee <> 0) then raise exception 'Taxa de entrega inválida.'; end if;
   if p_customer_name is null or length(trim(p_customer_name)) < 2 then raise exception 'Informe seu nome.'; end if;
   if p_fulfillment = 'Entrega' and coalesce(trim(p_delivery_address), '') = '' then raise exception 'Informe o endereço de entrega.'; end if;
-  if p_fulfillment = 'Entrega' then
-    v_scheduled_delivery_date := coalesce(p_scheduled_delivery_date, (now() at time zone 'America/Sao_Paulo')::date + 1);
-    if v_scheduled_delivery_date < (now() at time zone 'America/Sao_Paulo')::date then raise exception 'Escolha uma data de entrega igual ou posterior a hoje.'; end if;
-  end if;
+  v_scheduled_delivery_date := coalesce(p_scheduled_delivery_date, (now() at time zone 'America/Sao_Paulo')::date + 1);
+  if v_scheduled_delivery_date < (now() at time zone 'America/Sao_Paulo')::date then raise exception 'Escolha uma data igual ou posterior a hoje.'; end if;
   if jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 or jsonb_array_length(p_items) > 30 then raise exception 'A sacola está vazia ou contém itens demais.'; end if;
   select count(*), count(distinct value->>'product_id') into v_count, v_unique_count from jsonb_array_elements(p_items);
   if v_count <> v_unique_count then raise exception 'O pedido contém sabores repetidos de forma inválida.'; end if;
