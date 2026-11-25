@@ -67,6 +67,7 @@ alter table public.order_items add column if not exists quantity integer default
 
 create index if not exists orders_created_at_idx on public.orders (created_at desc);
 create index if not exists order_items_order_id_idx on public.order_items (order_id);
+create index if not exists order_items_product_id_idx on public.order_items (product_id);
 alter table public.orders enable row level security;
 alter table public.order_items enable row level security;
 revoke all on public.orders, public.order_items from anon, authenticated;
@@ -107,6 +108,7 @@ declare
   v_items jsonb := '[]'::jsonb;
   v_count integer;
   v_unique_count integer;
+  v_reserved integer := 0;
 begin
   if p_fulfillment not in ('Entrega', 'Retirada') then raise exception 'Escolha entrega ou retirada.'; end if;
   if p_delivery_fee is null or p_delivery_fee < 0 or (p_fulfillment = 'Retirada' and p_delivery_fee <> 0) then raise exception 'Taxa de entrega inválida.'; end if;
@@ -123,13 +125,28 @@ begin
   insert into public.orders (id, order_number, status, source, fulfillment_method, delivery_fee, customer_name, customer_phone, delivery_address, notes)
   values (v_order_id, v_order_number, 'pending', 'site', p_fulfillment, p_delivery_fee, trim(p_customer_name), nullif(trim(coalesce(p_customer_phone, '')), ''), nullif(trim(coalesce(p_delivery_address, '')), ''), nullif(trim(coalesce(p_notes, '')), ''));
 
-  for v_item in select value from jsonb_array_elements(p_items) loop
+  for v_item in select value from jsonb_array_elements(p_items) order by value->>'product_id' loop
     if coalesce(v_item->>'product_id', '') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then raise exception 'Identificador de sabor inválido.'; end if;
     v_product_id := (v_item->>'product_id')::uuid;
     if coalesce(v_item->>'quantity', '') !~ '^[1-9][0-9]*$' or (v_item->>'quantity')::numeric > 100 then raise exception 'Quantidade de sabor inválida.'; end if;
     v_quantity := (v_item->>'quantity')::integer;
-    select id, name, price, active into v_product from public.products where id = v_product_id;
+    select id, name, price, active, stock_quantity into v_product
+      from public.products
+      where id = v_product_id
+      for update;
     if not found or v_product.active is false then raise exception 'Um sabor do pedido não está mais disponível.'; end if;
+
+    select coalesce(sum(oi.quantity), 0)::integer
+      into v_reserved
+      from public.order_items oi
+      join public.orders o on o.id = oi.order_id
+      where oi.product_id = v_product.id
+        and o.source = 'site'
+        and o.status in ('pending', 'aguardando_confirmacao');
+    if v_product.stock_quantity - v_reserved < v_quantity then
+      raise exception 'Estoque insuficiente para %. Saldo: %, reservado por pedidos do site: %, solicitado: %.',
+        v_product.name, v_product.stock_quantity, v_reserved, v_quantity;
+    end if;
 
     insert into public.order_items (order_id, product_id, product_name, unit_price, quantity)
     values (v_order_id, v_product.id, v_product.name, v_product.price, v_quantity);
